@@ -1,0 +1,94 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Farver % 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\definecolor{DTUcred}{rgb}{0.6,0,0}
+\definecolor{DTUblue}{rgb}{0.1843,0.2431,0.9176}
+\definecolor{DTUbrightgreen}{rgb}{0.1216,0.8157,0.5098}
+\definecolor{DTUnavyblue}{rgb}{0.0118,0.0588,0.3098}
+\definecolor{DTUyellow}{rgb}{0.9647,0.8157,0.3019}
+\definecolor{DTUorange}{rgb}{0.9882,0.4627,0.2039}
+\definecolor{DTUpink}{rgb}{0.9686,0.7333,0.6941}
+\definecolor{DTUgrey}{rgb}{0.8549,0.8549,0.8549}
+\definecolor{DTUred}{rgb}{0.9098,0.2471,0.2824}
+\definecolor{DTUgreen}{rgb}{0,0.5333,0.2078}
+\definecolor{DTUpurple}{rgb}{0.4745,0.1373,0.5569}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% define chapters and sections and subsections %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\hsp}{\hspace{20pt}}
+\titleformat{\chapter}[hang]{\Huge\sffamily}{\thechapter\hsp\textcolor{DTUgrey}{\(\vert\)}\hsp}{0pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-40pt}{40pt}
+
+\titleformat{\section}
+  {\Large\sffamily}{\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\large\sffamily}{\thesubsection}{1em}{}
+  
+\titleformat{\subsubsection}
+{\large\sffamily}{\thesubsubsection}{1em}{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Header and footer % 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\makeatletter
+\newcommand*{\currentname}{\@currentlabelname}
+\makeatother
+
+\pagestyle{fancy}
+\fancyfoot{}{}{}
+\fancyhead[LO]{\leftmark}
+\fancyhead[RE]{\thesection \hspace{5pt} \currentname}
+\fancyhead[LE,RO]{\thepage}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% for water mark %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% DTU frieze
+\newcommand{\frieze}{%
+    \AddToShipoutPicture*{
+        \put(0,0){
+            \parbox[b][\paperheight]{\paperwidth}{%
+                \includegraphics[trim=130mm 0 0 0,width=0.9\textwidth]{Illustrations/DTU-frise-SH-15.pdf}
+                \vspace*{2.5cm}
+            }
+        }
+    }
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% preface % 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newlength{\myl}
+\newcommand{\namesigdatehrule}[1]{\par\tikz \draw [black, densely dotted, very thick] (0.04,0) -- (#1,0);\par}
+\newcommand{\namesigdate}[2][]{%
+\settowidth{\myl}{#2}
+\setlength{\myl}{\myl+10pt}
+\begin{minipage}{\myl}%
+\begin{center}
+    #2  % Insert name from the command eg. \namesigdate{\authorname}
+    \vspace{1.5cm} % Spacing between name and signature line 
+    \namesigdatehrule{\myl}\smallskip % Signature line and a small skip
+    \small \textit{Signature} % Text under the signature line "Signature"
+    \vspace{1.0cm} % Spacing between "Signature" and the date line
+    \namesigdatehrule{\myl}\smallskip % Date line and a small skip
+    \small \textit{Date} % Text under date line "Date" 
+\end{center}
+\end{minipage}
+}

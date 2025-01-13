@@ -1,0 +1,76 @@
+\documentclass[twoside]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+% \usepackage[a4paper, total={5.8in, 7.5in}]{geometry}
+\usepackage[a4paper, inner=3.2cm,outer=3.2cm]{geometry} %left=4cm,right=2cm would be equivalent
+\usepackage{amsmath}        % math stuff
+\usepackage{amssymb}        % math symbols  
+\usepackage{mathtools}      % math stuff 
+\usepackage{commath}        % for fancy d in derivative
+\setlength\parindent{0pt}   % no indent 
+\setlength{\parskip}{0.5em} % user defined linjeskift size 
+\setlength{\belowcaptionskip}{-7pt}
+\usepackage{setspace}       % for "noindents" and define linjeskift 
+\onehalfspacing
+\usepackage{graphicx}       % for illustrations and figures 
+\graphicspath{Illustrations}
+\usepackage{float}          % placement of figures 
+\usepackage[table, dvipsnames]{xcolor}  % to color tables in DTU colors <3 and for more colors. Overview can be found here: https://en.wikibooks.org/wiki/LaTeX/Colors
+\usepackage[labelfont = bf, font = {small}, margin = 1cm]{caption}
+\usepackage{subcaption}     % for subfigures with labels 
+\usepackage{fancyhdr}       % for fancy header and footer 
+\usepackage{lastpage}       % for reference to last page 
+\usepackage{multirow}       % for merging cells in tables 
+\usepackage{ragged2e}       % for flushleft and -right 
+\usepackage{pdflscape}      % landscape pages
+%\usepackage{mcode}          % for matlab code 
+\usepackage{mdframed}       % to make boxes around matlab code 
+\usepackage[strict]{changepage} % to locally change margin size 
+\usepackage{bm}             % bold math 
+\usepackage{comment}        % comment out several lines. can also be done with ctr + shift + 7
+\usepackage{tcolorbox}      % to make fancy colored boxes around opgave tekst 
+\usepackage{wrapfig}        % for wraparoundfigures
+\usepackage{blindtext}      % blind text
+\usepackage{multicol}       % for making columns
+\usepackage[bottom]{footmisc} % move footnote all the way to the bottom
+\usepackage{booktabs} % for nice tables (midrule...)
+%\usepackage{tgbonum} % local fonts 
+\usepackage{tikz}           % Package for drawing
+\usetikzlibrary{external, decorations.pathreplacing}   % external library to cache tikz drawings
+\renewcommand{\labelitemi}{-}
+\usepackage{tocloft}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\renewcommand{\cfttoctitlefont}{\Huge\sffamily}
+%\setcounter{section}{0}
+\usepackage{tabularx}
+\usepackage{biblatex}
+\usepackage{csquotes}
+\usepackage{titlesec}
+\usepackage{nameref}
+\usepackage{eso-pic} % for water mark 
+\usepackage[linktoc=all]{hyperref}
+\usepackage{todonotes}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{pdfpages}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=DTUnavyblue,
+    filecolor=DTUnavyblue,      
+    urlcolor=DTUnavyblue,
+    citecolor=DTUnavyblue,
+    pdftitle={Bachelor Project},
+    pdfpagemode=FullScreen,
+    }
+
+\bibliography{bibliography}
+
+\author{}
+\date{}
+
+\renewcommand{\aboverulesep}{0pt} % for table coloring 
+\renewcommand{\belowrulesep}{0pt}
+\setlength\extrarowheight{5pt}
+
+\usepackage{url}

@@ -5,7 +5,7 @@ import os
 class MyTestCommand:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'robotArm.svg'),
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'test.svg'),
             'MenuText': 'My Test Command 2',
             'ToolTip': 'This is my test command'
         }

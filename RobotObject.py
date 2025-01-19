@@ -3,12 +3,13 @@ import FreeCADGui
 
 
 class RobotObject:
-    def __init__(self, obj, links):
+    def __init__(self, obj, link_arr):
         # Link the custom object to this proxy
         obj.Proxy = self
         
         # Add the links attribute
-        obj.addProperty("App::PropertyPythonObject", "Links", "Robot", "List of links").Links = links
+        self.Links = link_arr
+        obj.addProperty("App::PropertyPythonObject", "Links", "Robot", "List of links").Links = link_arr
         
         # Additional setup if needed
         self.Type = "Robot"
@@ -21,6 +22,12 @@ class RobotObject:
         """Handle property changes."""
         if prop == "Links":
             FreeCAD.Console.PrintMessage(f"Links updated: {obj.Links}\n")
+
+    def drawCoordinateSystem(self):
+        """Draw the coordinate system of the robot."""
+        for link in self.Links:
+            placement = link.Joint.Placement
+            print(f"Drawing coordinate system for {link.Joint.Name} at {placement.Base}")
 
 class RobotViewProvider:
     def __init__(self, obj):
@@ -61,5 +68,6 @@ def initialize_robot(links):
     obj = doc.addObject("App::FeaturePython", "Robot")
     RobotObject(obj, links)  # Initialize the custom robot object
     RobotViewProvider(obj.ViewObject)  # Attach the view provider
+    #obj.drawCoordinateSystem()  # Draw the coordinate system
     doc.recompute()
     return obj

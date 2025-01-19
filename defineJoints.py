@@ -3,45 +3,10 @@ import FreeCADGui
 import os
 import RobotObject
 
-import json
-
-# Base Joint class
-class Joint:
-    def __init__(self, joint, body, axis=None):
-        self.name = joint
-        self.body = body
-        self.axis = axis
-
-    #def __str__(self):
-    #    return f"Name: {self.name}, Body: {self.body}, Axis: {self.axis}"
-
-    #def __repr__(self):
-    #    return f"Joint(name={self.name}, body={self.body}, axis={self.axis})"
-
-
-# FixedJoint class
-class FixedJoint(Joint):
-    def __init__(self, name, body):
-        super().__init__(name, body)
-
-    def __str__(self):
-        return f"Fixed Joint - Name: {self.name}, Body: {self.body}"
-
-# RevoluteJoint class
-class RevoluteJoint(Joint):
-    def __init__(self, name, body, axis):
-        super().__init__(name, body, axis)
-
-    def __str__(self):
-        return f"Revolute Joint - Name: {self.name}, Body: {self.body}, Axis: {self.axis}"
-
-# PrismaticJoint class
-class PrismaticJoint(Joint):
-    def __init__(self, name, body, axis):
-        super().__init__(name, body, axis)
-
-    def __str__(self):
-        return f"Prismatic Joint - Name: {self.name}, Body: {self.body}, Axis: {self.axis}"
+class Link:
+    def __init__(self, joint, body):
+        self.Joint = joint
+        self.Body = body
 
 class SelectConstraints:
     def GetResources(self):
@@ -52,26 +17,25 @@ class SelectConstraints:
         }
 
     def Activated(self):
-        joint_arr = []
-        joints = FreeCAD.ActiveDocument.getObject("Joints").OutList
-        last_body_name = None
-
+        link_arr = []
+        joints = FreeCAD.ActiveDocument.Joints.OutList
         for _ in joints:
             for joint in joints:
-                
-                if not joint_arr:
+                if not link_arr:
                     if joint.Label == "GroundedJoint": # if joint is grounded (first joint)
-                        joint_arr.append(FixedJoint(joint.Name, joint.ObjectToGround.Name))
+                        link_arr.append(Link(joint, eval(f"FreeCAD.ActiveDocument.{joint.ObjectToGround.Name}")))
 
                 else:
-                    if joint_arr and joint.Name not in [j.name for j in joint_arr]: # if joint_arr exists and joint is not already in joint_arr
+                    if link_arr and joint.Name not in [link.Joint.Name for link in link_arr]: # if link_arr exists and joint is not already in link_arr
                         ref1, ref2 = joint.Reference1[1][0].split('.')[0], joint.Reference2[1][0].split('.')[0]
-                        if joint_arr[-1].body in [ref1, ref2]:
-                            joint_arr.append(RevoluteJoint(joint.Name, ref1 if ref1 != last_body_name else ref2, [0,0,1]))
-        robot = RobotObject.initialize_robot(joint_arr)
+                        if link_arr[-1].Body.Name in [ref1, ref2]:
+                            link_arr.append( Link(joint, eval(f"FreeCAD.ActiveDocument.{ref1 if link_arr[-1].Body.Name == ref2 else ref2}")) )
+
+
+        robot = RobotObject.initialize_robot(link_arr)
         print("Robot initialized with the following joints:")
         for link in robot.Links:
-            print(f"Name: {link.name}, Body: {link.body}, Axis: {link.axis}")
+            print(f"Name: {link.Joint.Name}, Body: {link.Body.Name}")
 
     def IsActive(self):
         return FreeCAD.ActiveDocument is not None

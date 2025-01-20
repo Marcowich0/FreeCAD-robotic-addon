@@ -37,10 +37,11 @@ class SelectConstraints:
         robot.Constraints = [link.Joint for link in link_arr]
 
         lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{0}' )
+        lcs.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(1,0,0), FreeCAD.Vector(0,1,0), FreeCAD.Vector(0,0,1))
         FreeCAD.ActiveDocument.getObject("RobotContainer").addObject(lcs)
         lcs_arr = [lcs]
         for i, link in enumerate(link_arr):
-            lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i}' ) # Adds coordinate system to the document
+            lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i+1}' ) # Adds coordinate system to the document
 
             edge_nr = int(re.search(r'\d+$', link.Joint.Reference1[1][0]).group()) - 1 # Finds edge number from reference
 
@@ -48,15 +49,26 @@ class SelectConstraints:
 
             circle = FreeCAD.ActiveDocument.getObject(link.Body.Name).Shape.Edges[edge_nr].Curve # Finds the circle of the constraint
             lcs.Placement.Base = circle.Center # Sets the base of the coordinate system to the center of the circle
-            z_axis = circle.Axis # Sets the axis of the coordinate system to the axis of the circle
-
+            
             last_x = lcs_arr[-1].Placement.Rotation.multVec(FreeCAD.Vector(1,0,0))
             last_z = lcs_arr[-1].Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
-
-            x_axis = last_z.cross(z_axis) if last_z.cross(z_axis).Length > 0.0001 else last_x
-            y_axis = z_axis.cross(x_axis)
             
+            parallel = last_z.cross(circle.Axis).Length < 0.0001
+            if parallel:
+                z_axis = last_z
+                x_axis = last_x
 
+            else:
+                z_axis = circle.Axis # Sets the axis of the coordinate system to the axis of the circle
+                last_z.cross(z_axis)
+
+            y_axis = z_axis.cross(x_axis)
+
+            lcs.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
+
+            print(f"z_axis: {z_axis}, x_axis: {x_axis}, y_axis: {y_axis}") # debug
+            
+            
             FreeCAD.ActiveDocument.getObject("RobotContainer").addObject(lcs)
             lcs_arr.append(lcs)
 

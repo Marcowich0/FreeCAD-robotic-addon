@@ -1,15 +1,15 @@
 import FreeCAD
 import FreeCADGui
-
+import os
 
 class RobotObject:
-    def __init__(self, obj, link_arr):
+    def __init__(self, obj):
         # Link the custom object to this proxy
         obj.Proxy = self
         
-        # Add the links attribute
-        self.Links = link_arr
-        obj.addProperty("App::PropertyPythonObject", "Links", "Robot", "List of links").Links = link_arr
+        obj.addProperty("App::PropertyLinkList", "Constraints", "Robot", "List of links").Constraints = []
+        obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
+        obj.setEditorMode("Type", 1)  # Make the property read-only
         
         # Additional setup if needed
         self.Type = "Robot"
@@ -20,14 +20,9 @@ class RobotObject:
     
     def onChanged(self, obj, prop):
         """Handle property changes."""
-        if prop == "Links":
-            FreeCAD.Console.PrintMessage(f"Links updated: {obj.Links}\n")
+        if prop == "Constraints":
+            FreeCAD.Console.PrintMessage(f"Constraints updated: {obj.Constraints}\n")
 
-    def drawCoordinateSystem(self):
-        """Draw the coordinate system of the robot."""
-        for link in self.Links:
-            placement = link.Joint.Placement
-            print(f"Drawing coordinate system for {link.Joint.Name} at {placement.Base}")
 
 class RobotViewProvider:
     def __init__(self, obj):
@@ -59,15 +54,47 @@ class RobotViewProvider:
         return True
     
 
-def initialize_robot(links):
+def initialize_robot():
     """Directly initialize the robot object in the active document."""
     doc = FreeCAD.ActiveDocument
     if doc is None:
         doc = FreeCAD.newDocument()
     
     obj = doc.addObject("App::FeaturePython", "Robot")
-    RobotObject(obj, links)  # Initialize the custom robot object
+    RobotObject(obj)  # Initialize the custom robot object
     RobotViewProvider(obj.ViewObject)  # Attach the view provider
     #obj.drawCoordinateSystem()  # Draw the coordinate system
     doc.recompute()
     return obj
+
+
+# ----------------- Adding the GUI Button -----------------
+class CreateRobotCommand:
+    """A FreeCAD command to create a Robot object."""
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'robotArm.svg'),
+            'MenuText': 'Create Robot',
+            'ToolTip': 'Instantiate a new Robot'
+        }
+
+    def Activated(self):
+        """Called when the command is activated (button clicked)."""
+        initialize_robot()
+
+    def IsActive(self):
+        """Determine if the command should be active."""
+        if get_robot() is None:
+            return True
+        return False
+    
+
+
+def get_robot():
+    for obj in FreeCAD.ActiveDocument.Objects:
+        if hasattr(obj, 'Type') and obj.Type == 'Robot':
+            return obj
+    return None
+
+FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())

@@ -1,8 +1,7 @@
 import FreeCAD
 import FreeCADGui
 
-import test_command
-import defineJoints
+import select_constaints
 import RobotObject
 
 import os
@@ -15,7 +14,7 @@ class Robotics (Workbench):
     def Initialize(self):
         self.__class__.Icon = os.path.join(FreeCAD.getHomePath(), 'Mod', 'FreeCAD-robotic-addon', 'Resources', 'icons', 'robotArm.svg')
 
-        self.list = ["my_test_command", "SelectConstraints"]
+        self.list = [ "CreateRobotCommand", "SelectConstraints"]
         self.appendToolbar("My Commands", self.list)
         self.appendMenu("My New Menu", self.list)
         self.appendMenu(["An existing Menu", "My submenu"], self.list)

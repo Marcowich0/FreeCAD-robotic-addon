@@ -8,6 +8,8 @@ class RobotObject:
         obj.Proxy = self
         
         obj.addProperty("App::PropertyLinkList", "Constraints", "Robot", "List of links").Constraints = []
+        obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
+
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
         
@@ -59,13 +61,22 @@ def initialize_robot():
     doc = FreeCAD.ActiveDocument
     if doc is None:
         doc = FreeCAD.newDocument()
-    
-    obj = doc.addObject("App::FeaturePython", "Robot")
-    RobotObject(obj)  # Initialize the custom robot object
-    RobotViewProvider(obj.ViewObject)  # Attach the view provider
-    #obj.drawCoordinateSystem()  # Draw the coordinate system
+
+    # Create a group to contain the robot
+    robot_group = doc.addObject("App::DocumentObjectGroup", "RobotContainer")
+    robot_group.Label = "Robot Container"
+
+    # Create the Robot object
+    robot_obj = doc.addObject("App::FeaturePython", "Robot")
+    RobotObject(robot_obj)  # Initialize the custom robot object
+    RobotViewProvider(robot_obj.ViewObject)  # Attach the view provider
+
+    # Add the Robot object to the group
+    robot_group.addObject(robot_obj)
+
     doc.recompute()
-    return obj
+    return robot_obj
+
 
 
 # ----------------- Adding the GUI Button -----------------

@@ -1,6 +1,7 @@
 import FreeCAD
 import FreeCADGui
 import os
+import re
 import RobotObject
 
 class Link:
@@ -34,6 +35,33 @@ class SelectConstraints:
         link_arr.pop(0) # Remove the grounded joint (Is not a motor)
         robot = RobotObject.get_robot()
         robot.Constraints = [link.Joint for link in link_arr]
+
+        lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{0}' )
+        FreeCAD.ActiveDocument.getObject("RobotContainer").addObject(lcs)
+        lcs_arr = [lcs]
+        for i, link in enumerate(link_arr):
+            lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i}' ) # Adds coordinate system to the document
+
+            edge_nr = int(re.search(r'\d+$', link.Joint.Reference1[1][0]).group()) - 1 # Finds edge number from reference
+
+            print(f"ref body: {link.Body.Name}, ref edge nr {edge_nr}, joint name: {link.Joint.Name}") # debug
+
+            circle = FreeCAD.ActiveDocument.getObject(link.Body.Name).Shape.Edges[edge_nr].Curve # Finds the circle of the constraint
+            lcs.Placement.Base = circle.Center # Sets the base of the coordinate system to the center of the circle
+            z_axis = circle.Axis # Sets the axis of the coordinate system to the axis of the circle
+
+            last_x = lcs_arr[-1].Placement.Rotation.multVec(FreeCAD.Vector(1,0,0))
+            last_z = lcs_arr[-1].Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
+
+            x_axis = last_z.cross(z_axis) if last_z.cross(z_axis).Length > 0.0001 else last_x
+            y_axis = z_axis.cross(x_axis)
+            
+
+            FreeCAD.ActiveDocument.getObject("RobotContainer").addObject(lcs)
+            lcs_arr.append(lcs)
+
+        robot.CoordinateSystems = lcs_arr
+            
 
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()

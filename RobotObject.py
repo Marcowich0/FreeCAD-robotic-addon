@@ -10,7 +10,9 @@ class RobotObject:
         
         obj.addProperty("App::PropertyLinkList", "Constraints", "Robot", "List of links").Constraints = []
         obj.addProperty("App::PropertyLinkList", "Bodies", "Robot", "List of bodies").Bodies = []
+        obj.addProperty("App::PropertyIntegerList", "Edges", "Robot", "List of edges").Edges = []
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
+        obj.addProperty("App::PropertyLinkList", "BodyCoordinateSystems", "Robot", "List of body coordinate systems").BodyCoordinateSystems = []
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
@@ -125,13 +127,14 @@ def drawDanevitHartenberg(obj):
     lcs_arr = [lcs]
 
         
-    for i, joint, body in zip(range(len(obj.Constraints)), obj.Constraints, obj.Bodies):
+    for i, joint, body, edge in zip(range(len(obj.Constraints)), obj.Constraints, obj.Bodies, obj.Edges):
         if not obj.CoordinateSystems:
             lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i+1}' ) # Adds coordinate system to the document
         else:
             lcs = obj.CoordinateSystems[i+1]
 
-        edge_nr = int(re.search(r'\d+$', joint.Reference1[1][0]).group()) - 1 # Finds edge number from reference
+        #edge_nr = int(re.search(r'\d+$', joint.Reference1[1][0]).group()) - 1 # Finds edge number from reference
+        edge_nr = edge
 
         print(f"ref body: {body.Name}, ref edge nr {edge_nr}, joint name: {body.Name}") # debug
 

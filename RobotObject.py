@@ -148,7 +148,21 @@ def connectRobotToAssembly():
 
     for obj in doc.Joints.OutList:
         if hasattr(obj, 'ObjectToGround'):
-            link_arr = [Link(obj, obj.ObjectToGround)] # Initialize the link array with the grounded joint to astablish the order of the rest
+            first_body = obj.ObjectToGround
+            
+            identity_matrix = FreeCAD.Matrix(
+                FreeCAD.Vector(1, 0, 0),
+                FreeCAD.Vector(0, 1, 0),
+                FreeCAD.Vector(0, 0, 1),
+                FreeCAD.Vector(0, 0, 0)  # Translation vector
+            )
+            obj.ObjectToGround = None
+            first_body.Placement.Matrix = identity_matrix
+            obj.ObjectToGround = first_body
+
+            link_arr = [Link(obj, first_body)] # Initialize the link array with the grounded joint to astablish the order of the rest
+            print(f"Corrected placement of {first_body.Name} to {first_body.Placement.Matrix}\n")
+            
 
     for _ in joints:
         for joint in joints: # Double loop to add in the right order

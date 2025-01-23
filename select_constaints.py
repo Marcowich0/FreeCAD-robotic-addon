@@ -19,11 +19,12 @@ class SelectConstraints:
         }
 
     def Activated(self):
+        doc = FreeCAD.ActiveDocument
         body = lambda ref: ref[1][0].split('.')[0]
         edge = lambda ref: int(re.search(r'\d+$', ref[1][0].split('.')[1]).group()) - 1
         joints = FreeCADGui.Selection.getSelection()
 
-        for obj in FreeCAD.ActiveDocument.Objects:
+        for obj in doc.Objects:
             if hasattr(obj, 'ObjectToGround'):
                 link_arr = [Link(obj, obj.ObjectToGround)] # Initialize the link array with the grounded joint to astablish the order of the rest
 
@@ -40,9 +41,10 @@ class SelectConstraints:
                     elif link_arr[-1].Body.Name == ref2:
                         link_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref1}"), edge1)  )
                         
-
-        link_arr.pop(0) # Remove the grounded joint (Is not a motor)
         robot = RobotObject.get_robot()
+        robot.Base = link_arr[0].Body
+        link_arr.pop(0) # Remove the grounded joint (Is not a motor)
+
         robot.Constraints = [link.Joint for link in link_arr]
         robot.Bodies = [link.Body for link in link_arr]
         robot.Edges = [link.Edge for link in link_arr]
@@ -51,11 +53,11 @@ class SelectConstraints:
 
         for i, body, edge in zip(range(len(robot.Bodies)), robot.Bodies, robot.Edges):
             print(f"Body: {body.Name}, Edge: {edge}")
-            lcs = FreeCAD.ActiveDocument.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i+1}')
+            lcs = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i+1}')
             original_body = body.LinkedObject
             original_body.addObject(lcs)
 
-            circle = FreeCAD.ActiveDocument.getObject(original_body.Name).Shape.Edges[edge].Curve # Finds the circle of the constraint
+            circle = doc.getObject(original_body.Name).Shape.Edges[edge].Curve # Finds the circle of the constraint
             lcs.Placement.Base = circle.Center # Sets the base of the coordinate system to the center of the circle
 
             z_axis = circle.Axis
@@ -66,6 +68,19 @@ class SelectConstraints:
             lcs.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
 
             lcs.ViewObject.Visibility = False
+
+            datum_plane = original_body.newObject('PartDesign::Plane', f'plane_on_body_{i+1}')
+            datum_plane.AttachmentOffset = FreeCAD.Placement(
+                FreeCAD.Vector(0.0, 0.0, 0.0),  # Position the plane
+                FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 0.0)  # No rotation
+            )
+            datum_plane.MapReversed = False
+            datum_plane.AttachmentSupport = [(lcs, '')]  # Attach to the LCS
+            datum_plane.MapPathParameter = 0.0
+            datum_plane.MapMode = 'ObjectXZ'  # Align the plane to the X-Z plane of the LCS
+            datum_plane.recompute()
+
+
             
 
 

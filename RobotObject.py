@@ -14,6 +14,8 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "BodyCoordinateSystems", "Robot", "List of body coordinate systems").BodyCoordinateSystems = []
 
+        obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
+
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
         #obj.setEditorMode("Bodies", 1)  # Make the property read-only
@@ -119,7 +121,7 @@ def drawDanevitHartenberg(obj):
     if not obj.CoordinateSystems:
         """Draw the robot using the Denavit-Hartenberg parameters."""
         lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{0}' )
-        FreeCAD.ActiveDocument.getObject("RobotContainer").addObject(lcs)
+        obj.Base.LinkedObject.addObject(lcs)
     else:
         lcs = obj.CoordinateSystems[0]
 
@@ -157,13 +159,25 @@ def drawDanevitHartenberg(obj):
         y_axis = z_axis.cross(x_axis)
 
         lcs.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
+        obj.Base.LinkedObject.addObject(lcs)
+        lcs_arr.append(lcs)
+
+        datum_plane = FreeCAD.ActiveDocument.addObject('PartDesign::Plane', f'plane_on_DH_coordinates_{i+1}')
+        obj.Base.LinkedObject.addObject(datum_plane)
+        datum_plane.AttachmentOffset = FreeCAD.Placement(
+            FreeCAD.Vector(0.0, 0.0, 0.0),  # Base position of the plane
+            FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 0.0)  # No additional rotation
+        )
+        datum_plane.MapReversed = False
+        datum_plane.AttachmentSupport = [(lcs, '')]  # Attach to the LCS
+        datum_plane.MapPathParameter = 0.0
+        datum_plane.MapMode = 'ObjectXZ'  # Align to the X-Z plane of the LCS
+        datum_plane.recompute()
 
         print(f"z_axis: {z_axis}, x_axis: {x_axis}, y_axis: {y_axis}") # debug
         print(f"length of z_axis: {round(z_axis.Length, 3)}, length of x_axis: {round(x_axis.Length, 3)}, length of y_axis: {round(y_axis.Length, 3)}")
         print(" -- ")
         
-        FreeCAD.ActiveDocument.getObject("RobotContainer").addObject(lcs)
-        lcs_arr.append(lcs)
 
     obj.CoordinateSystems = lcs_arr
 

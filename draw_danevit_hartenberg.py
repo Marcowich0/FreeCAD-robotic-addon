@@ -41,7 +41,7 @@ def drawDanevitHartenberg():
     obj = get_robot()
     if not obj.CoordinateSystems:
         """Draw the robot using the Denavit-Hartenberg parameters."""
-        lcs = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{0}' )
+        lcs = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_global' )
         obj.Base.LinkedObject.addObject(lcs)
     else:
         lcs = obj.CoordinateSystems[0]
@@ -49,11 +49,14 @@ def drawDanevitHartenberg():
     lcs.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(1,0,0), FreeCAD.Vector(0,1,0), FreeCAD.Vector(0,0,1))
     lcs_arr = [lcs]
 
-        
-    for i, body, edge in zip(range(len(obj.Constraints)), obj.Bodies, obj.Edges):
+    print(f"Starting loop with {len(obj.Constraints)} iterations")
+    print(f"obj.PrevBodies: {obj.PrevBodies}")
+    print(f"obj.PrevEdges: {obj.PrevEdges}")
+    for i, body, edge in zip(range(len(obj.Constraints)), obj.PrevBodies, obj.PrevEdges):
+        print(f" -- Creating LCS for joint {i} -- body: {body}, -- edge: {edge}") # debug
         if not obj.CoordinateSystems:
-            print(f" -- Creating LCS for joint {i+1}") # debug
-            lcs = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i+1}' ) # Adds coordinate system to the document
+            print(f" -- Creating LCS for joint {i}") # debug
+            lcs = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i}' ) # Adds coordinate system to the document
             obj.Base.LinkedObject.addObject(lcs)
         else:
             lcs = obj.CoordinateSystems[i+1]
@@ -83,6 +86,7 @@ def drawDanevitHartenberg():
         lcs.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
         lcs_arr.append(lcs)
 
+        """
         if not any(plane.Name == f'plane_on_DH_coordinates_{i+1}' for plane in doc.Objects):
             datum_plane = doc.addObject('PartDesign::Plane', f'plane_on_DH_coordinates_{i+1}')
             obj.Base.LinkedObject.addObject(datum_plane)
@@ -101,7 +105,7 @@ def drawDanevitHartenberg():
         print(f"z_axis: {z_axis}, x_axis: {x_axis}, y_axis: {y_axis}") # debug
         print(f"length of z_axis: {round(z_axis.Length, 3)}, length of x_axis: {round(x_axis.Length, 3)}, length of y_axis: {round(y_axis.Length, 3)}")
         print(" -- ")
-        
+        """
 
     obj.CoordinateSystems = lcs_arr
 

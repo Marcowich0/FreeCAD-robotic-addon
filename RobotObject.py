@@ -13,6 +13,10 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "Constraints", "Robot", "List of links").Constraints = []
         obj.addProperty("App::PropertyLinkList", "Bodies", "Robot", "List of bodies").Bodies = []
         obj.addProperty("App::PropertyIntegerList", "Edges", "Robot", "List of edges").Edges = []
+        
+        obj.addProperty("App::PropertyLinkList", "PrevBodies", "Robot", "List of previous bodies").PrevBodies = []
+        obj.addProperty("App::PropertyIntegerList", "PrevEdges", "Robot", "List of previous edges").PrevEdges = []
+        
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "BodyCoordinateSystems", "Robot", "List of body coordinate systems").BodyCoordinateSystems = []
         obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
@@ -24,6 +28,9 @@ class RobotObject:
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
         #obj.setEditorMode("Bodies", 1)  # Make the property read-only
+
+        obj.setEditorMode("PrevBodies", 2)  # Make the property invisible
+        obj.setEditorMode("PrevEdges", 2)  # Make the property invisible
         
         # Additional setup if needed
         self.Type = "Robot"
@@ -38,8 +45,8 @@ class RobotObject:
             FreeCAD.Console.PrintMessage(f"Constraints updated: {obj.Constraints}\n")
         if prop == "Angles":
             FreeCAD.Console.PrintMessage(f"Angles updated: {obj.Angles}\n")
-            updateAngles()
-            drawDanevitHartenberg()
+            #updateAngles()
+            #drawDanevitHartenberg()
 
 
 
@@ -95,9 +102,9 @@ def initialize_robot():
 
     connectRobotToAssembly()
     drawDanevitHartenberg()
-    drawPlanesOnDHCoordinates()
+    #drawPlanesOnDHCoordinates()
 
-    createAngleConstrains()
+    #createAngleConstrains()
     return robot_obj
 
 
@@ -148,6 +155,8 @@ def connectRobotToAssembly():
 
     for obj in doc.Joints.OutList:
         if hasattr(obj, 'ObjectToGround'):
+
+            # Correct the placement of the first body to the identity matrix to have consistent baseframe with assembly
             first_body = obj.ObjectToGround
             
             identity_matrix = FreeCAD.Matrix(
@@ -161,6 +170,7 @@ def connectRobotToAssembly():
             obj.ObjectToGround = first_body
 
             link_arr = [Link(obj, first_body)] # Initialize the link array with the grounded joint to astablish the order of the rest
+            link_prev_arr = []
             print(f"Corrected placement of {first_body.Name} to {first_body.Placement.Matrix}\n")
             
 
@@ -173,9 +183,11 @@ def connectRobotToAssembly():
 
                 if link_arr[-1].Body.Name == ref1:
                     link_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref2}"), edge2)  )
+                    link_prev_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref1}"), edge1)  )
 
                 elif link_arr[-1].Body.Name == ref2:
                     link_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref1}"), edge1)  )
+                    link_prev_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref2}"), edge2)  )
                     
 
     robot.Base = link_arr[0].Body
@@ -185,6 +197,9 @@ def connectRobotToAssembly():
     robot.Bodies = [link.Body for link in link_arr]
     robot.Edges = [link.Edge for link in link_arr]
     robot.Angles = [0 for _ in link_arr]
+
+    robot.PrevBodies = [link.Body for link in link_prev_arr]
+    robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
 
 def drawPlanesOnDHCoordinates():

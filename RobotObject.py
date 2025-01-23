@@ -2,6 +2,8 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
+from draw_danevit_hartenberg import drawDanevitHartenberg
+from main_utils import get_robot
 
 class RobotObject:
     def __init__(self, obj):
@@ -14,6 +16,8 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "BodyCoordinateSystems", "Robot", "List of body coordinate systems").BodyCoordinateSystems = []
         obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
+
+        obj.addProperty("App::PropertyLinkList", "AngleConstraints", "Robot", "List of angle constraints").AngleConstraints = []
 
         obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
 
@@ -34,6 +38,7 @@ class RobotObject:
             FreeCAD.Console.PrintMessage(f"Constraints updated: {obj.Constraints}\n")
         if prop == "Angles":
             FreeCAD.Console.PrintMessage(f"Angles updated: {obj.Angles}\n")
+            updateAngles()
             drawDanevitHartenberg()
 
 
@@ -118,14 +123,7 @@ class CreateRobotCommand:
             return True
         return False
     
-
-
-def get_robot():
-    for obj in FreeCAD.ActiveDocument.Objects:
-        if hasattr(obj, 'Type') and obj.Type == 'Robot':
-            return obj
-    return None
-
+FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())
 
 class Link:
     def __init__(self, joint, body, edge = 0):
@@ -206,72 +204,8 @@ def drawPlanesOnDHCoordinates():
         datum_plane.MapPathParameter = 0.0
         datum_plane.MapMode = 'ObjectXZ'  # Align the plane to the X-Z plane of the LCS
         datum_plane.recompute()
+        datum_plane.ViewObject.Visibility = False
 
-
-def drawDanevitHartenberg():
-    obj = get_robot()
-    if not obj.CoordinateSystems:
-        """Draw the robot using the Denavit-Hartenberg parameters."""
-        lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{0}' )
-        obj.Base.LinkedObject.addObject(lcs)
-    else:
-        lcs = obj.CoordinateSystems[0]
-
-    lcs.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(1,0,0), FreeCAD.Vector(0,1,0), FreeCAD.Vector(0,0,1))
-    lcs_arr = [lcs]
-
-        
-    for i, body, edge in zip(range(len(obj.Constraints)), obj.Bodies, obj.Edges):
-        if not obj.CoordinateSystems:
-            print(f" -- Creating LCS for joint {i+1}") # debug
-            lcs = FreeCAD.ActiveDocument.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i+1}' ) # Adds coordinate system to the document
-            obj.Base.LinkedObject.addObject(lcs)
-        else:
-            lcs = obj.CoordinateSystems[i+1]
-
-        edge_nr = edge
-
-        print(f"ref body: {body.Name}, ref edge nr {edge_nr}, joint name: {body.Name}") # debug
-
-        circle = FreeCAD.ActiveDocument.getObject(body.Name).Shape.Edges[edge_nr].Curve # Finds the circle of the constraint
-        lcs.Placement.Base = circle.Center # Sets the base of the coordinate system to the center of the circle
-        
-        last_x = lcs_arr[-1].Placement.Rotation.multVec(FreeCAD.Vector(1,0,0))
-        last_z = lcs_arr[-1].Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
-        
-        parallel = last_z.cross(circle.Axis).Length < 1e-6 # Checks if the circle axis is parallel to the last z-axis
-        print(f"parallel: {parallel}") # debug
-        if parallel:
-            z_axis = last_z
-            x_axis = last_x
-
-        else:
-            z_axis = circle.Axis # Sets the axis of the coordinate system to the axis of the circle
-            x_axis = last_z.cross(z_axis)
-
-        y_axis = z_axis.cross(x_axis)
-
-        lcs.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
-        lcs_arr.append(lcs)
-
-        datum_plane = FreeCAD.ActiveDocument.addObject('PartDesign::Plane', f'plane_on_DH_coordinates_{i+1}')
-        obj.Base.LinkedObject.addObject(datum_plane)
-        datum_plane.AttachmentOffset = FreeCAD.Placement(
-            FreeCAD.Vector(0.0, 0.0, 0.0),  # Base position of the plane
-            FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 0.0)  # No additional rotation
-        )
-        datum_plane.MapReversed = False
-        datum_plane.AttachmentSupport = [(lcs, '')]  # Attach to the LCS
-        datum_plane.MapPathParameter = 0.0
-        datum_plane.MapMode = 'ObjectXZ'  # Align to the X-Z plane of the LCS
-        datum_plane.recompute()
-
-        print(f"z_axis: {z_axis}, x_axis: {x_axis}, y_axis: {y_axis}") # debug
-        print(f"length of z_axis: {round(z_axis.Length, 3)}, length of x_axis: {round(x_axis.Length, 3)}, length of y_axis: {round(y_axis.Length, 3)}")
-        print(" -- ")
-        
-
-    obj.CoordinateSystems = lcs_arr
 
 
 def createAngleConstrains():
@@ -288,6 +222,7 @@ def createAngleConstrains():
     doc = App.ActiveDocument
 
     robot = get_robot()
+    angle_constraints = []
     for i, body in enumerate(robot.Bodies):
 
         print(f" -- Creating joint for body {body.Name} --") # debug
@@ -305,9 +240,12 @@ def createAngleConstrains():
         joint.Reference2 = [App.ActiveDocument.getObject("Assembly"), [f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.Plane', f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.']]
         joint.Visibility = False
 
+        angle_constraints.append(joint)
+
         print(f'{body.Name}.plane_on_body_{i+1}.Plane')
         print(f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.Plane')
 
+    robot.AngleConstraints = angle_constraints
     drawDanevitHartenberg()
 
     reSolve()
@@ -328,5 +266,15 @@ def reSolve():
     assembly.solve()
     App.closeActiveTransaction()
 
-    doc.recompute()
-FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())
+    FreeCAD.ActiveDocument.recompute()
+
+
+
+
+def updateAngles():
+    robot = get_robot()
+    for angle, angle_constraint in zip(robot.Angles, robot.AngleConstraints):
+        angle_constraint.Distance = angle
+    print(f"Angles set to: {robot.Angles}")
+    drawDanevitHartenberg()
+    reSolve()

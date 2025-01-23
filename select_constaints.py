@@ -22,9 +22,10 @@ class SelectConstraints:
         doc = FreeCAD.ActiveDocument
         body = lambda ref: ref[1][0].split('.')[0]
         edge = lambda ref: int(re.search(r'\d+$', ref[1][0].split('.')[1]).group()) - 1
-        joints = FreeCADGui.Selection.getSelection()
+        #joints = FreeCADGui.Selection.getSelection()
+        joints = [j for j in doc.Joints.OutList if hasattr(j, 'JointType') and j.JointType == 'Revolute']
 
-        for obj in doc.Objects:
+        for obj in doc.Joints.OutList:
             if hasattr(obj, 'ObjectToGround'):
                 link_arr = [Link(obj, obj.ObjectToGround)] # Initialize the link array with the grounded joint to astablish the order of the rest
 
@@ -87,6 +88,7 @@ class SelectConstraints:
             
 
     def IsActive(self):
+        return True
         sel = FreeCADGui.Selection.getSelection()
         if not sel or RobotObject.get_robot() is None: 
             return False

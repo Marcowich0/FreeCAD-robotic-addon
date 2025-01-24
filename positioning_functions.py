@@ -5,7 +5,7 @@ import re
 from main_utils import get_robot
 
 
-class testingCommand:
+class testCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
 
     def __init__(self):
@@ -29,7 +29,7 @@ class testingCommand:
         # You can add conditions here if needed
         return True if get_robot() != None else False
 
-FreeCADGui.addCommand('testingCommand', testingCommand())
+FreeCADGui.addCommand('testCommand', testCommand())
 
 
 def createDanevitHartenberg():
@@ -128,9 +128,9 @@ class flipDHCommand:
 
     def GetResources(self):
         return {
-            'MenuText': 'Draw Denavit-Hartenberg',
-            'ToolTip': 'Draw the robot using Denavit-Hartenberg parameters',
-            'Pixmap': 'path/to/icon.svg'  # Provide the path to your icon
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'rotateBody.svg'),
+            'MenuText': 'Rotate Joint',
+            'ToolTip': 'Rotate the zero-state of a joint 90 degrees'
         }
 
     def Activated(self):
@@ -141,6 +141,9 @@ class flipDHCommand:
             return False
         
         sel = FreeCADGui.Selection.getSelection()
+        if not sel:
+            return False
+        
         for s in sel:
             if s not in get_robot().Bodies:
                 return False
@@ -164,6 +167,40 @@ def flipDH():
 
 
 
+
+
+class changeRotationDirectionCommand:
+    """Command to draw the robot using Denavit-Hartenberg parameters."""
+
+    def __init__(self):
+        pass
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'changeDirection.svg'),
+            'MenuText': 'Change Rotation Direction',
+            'ToolTip': 'Change the positive rotation direction of the selected joint'
+        }
+
+    def Activated(self):
+        changeRotationDirection()
+
+    def IsActive(self):
+        if get_robot() == None:
+            return False
+        
+        sel = FreeCADGui.Selection.getSelection()
+
+        if not sel:
+            return False
+    
+        for s in sel:
+            if s not in get_robot().Bodies:
+                return False
+
+        return True
+
+FreeCADGui.addCommand('changeRotationDirectionCommand', changeRotationDirectionCommand())
 
 def changeRotationDirection():
     robot = get_robot()

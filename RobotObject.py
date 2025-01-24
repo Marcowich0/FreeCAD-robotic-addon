@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from positioning_functions import createDanevitHartenberg
+from positioning_functions import createDanevitHartenberg, updateAngles
 from main_utils import get_robot
 
 class RobotObject:
@@ -20,8 +20,6 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "BodyJointCoordinateSystems", "Robot", "List of body coordinate systems").BodyJointCoordinateSystems = []
         obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
-
-        obj.addProperty("App::PropertyLinkList", "AngleConstraints", "Robot", "List of angle constraints").AngleConstraints = []
 
         obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
 
@@ -44,9 +42,9 @@ class RobotObject:
         if prop == "Constraints":
             FreeCAD.Console.PrintMessage(f"Constraints updated: {obj.Constraints}\n")
         if prop == "Angles":
-            FreeCAD.Console.PrintMessage(f"Angles updated: {obj.Angles}\n")
-            #updateAngles()
-            #drawDanevitHartenberg()
+            if obj.BodyJointCoordinateSystems:
+                FreeCAD.Console.PrintMessage(f"Angles updated: {obj.Angles}\n")
+                updateAngles()
 
 
 
@@ -102,8 +100,6 @@ def initialize_robot():
 
     connectRobotToAssembly()
     createDanevitHartenberg()
-    #createLocalCoordinateOnBodies()
-    
     
 
     #createAngleConstrains()
@@ -204,101 +200,5 @@ def connectRobotToAssembly():
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
 
-def createLocalCoordinateOnBodies():
-    doc = FreeCAD.ActiveDocument
-    robot = get_robot()
-    BodyJointCoordinateSystems = []
-    for i, body, edge in zip(range(len(robot.Bodies)), robot.Bodies, robot.Edges):
-        print(f"Body: {body.Name}, Edge: {edge}")
-        lcs = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i}')
-        original_body = body.LinkedObject
-        original_body.addObject(lcs)
-
-        circle = doc.getObject(original_body.Name).Shape.Edges[edge].Curve # Finds the circle of the constraint
-        lcs.Placement.Base = circle.Center # Sets the base of the coordinate system to the center of the circle
-
-        o_A_dh = doc.getObject(f"LCS_link_{i}").Placement.Rotation
-        o_A_b  = body.Placement.Rotation
-        b_A_dh = o_A_b.inverted() * o_A_dh
-        
-        lcs.Placement.Rotation = b_A_dh
-        BodyJointCoordinateSystems.append(lcs)
-
-    robot.BodyJointCoordinateSystems = BodyJointCoordinateSystems
-        
-
-
-
-
-
-
-def createAngleConstrains():
-    import FreeCAD as App
-    import sys, os
-
-    # Add "Assembly" folder to path dynamically
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Assembly'))
-
-    # Import required classes
-    from JointObject import Joint, ViewProviderJoint
-    
-
-    doc = App.ActiveDocument
-
-    robot = get_robot()
-    angle_constraints = []
-    for i, body in enumerate(robot.Bodies):
-
-        print(f" -- Creating joint for body {body.Name} --") # debug
-
-        joint = doc.addObject("App::FeaturePython", "Joint")
-        doc.Joints.addObject(joint)
-
-        Joint(joint, 8)  # For example, index 8 for "Angle" joint type
-        ViewProviderJoint(joint.ViewObject)
-        joint.Activated = True
-        joint.Distance = 0.0
-        joint.JointType = "Angle"
-        joint.Label = f"Robot_joint_{i+1}"
-        joint.Reference1 = [App.ActiveDocument.getObject("Assembly"), [f'{body.Name}.plane_on_body_{i+1}.Plane', f'{body.Name}.plane_on_body_{i+1}.']]
-        joint.Reference2 = [App.ActiveDocument.getObject("Assembly"), [f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.Plane', f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.']]
-        joint.Visibility = False
-
-        angle_constraints.append(joint)
-
-        print(f'{body.Name}.plane_on_body_{i+1}.Plane')
-        print(f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.Plane')
-
-    robot.AngleConstraints = angle_constraints
-    createDanevitHartenberg()
-
-    reSolve()
-
-def reSolve():
-    import UtilsAssembly
-    import FreeCAD as App
-    import sys, os
-
-    # Add "Assembly" folder to path dynamically
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Assembly'))
-
-    assembly = UtilsAssembly.activeAssembly()
-    if not assembly:
-        return
-
-    App.setActiveTransaction("Solve assembly")
-    assembly.solve()
-    App.closeActiveTransaction()
-
-    FreeCAD.ActiveDocument.recompute()
-
-
-
-
-def updateAngles():
-    robot = get_robot()
-    for angle, angle_constraint in zip(robot.Angles, robot.AngleConstraints):
-        angle_constraint.Distance = angle
-    print(f"Angles set to: {robot.Angles}")
-    drawDanevitHartenberg()
-    reSolve()
+    for constraint in robot.Constraints:
+        constraint.Activated = False

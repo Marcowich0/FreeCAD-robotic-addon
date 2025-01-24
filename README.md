@@ -1,6 +1,6 @@
 # FreeCAD Robotic Addon
 
-### About This Project
+### About This Project -- Under Development --
 
 This repository contains the FreeCAD Robotic Addon, developed as part of Marc Clausen's Master Thesis at the Technical University of Denmark (DTU).
 

@@ -1,7 +1,7 @@
 import FreeCAD
 import FreeCADGui
 
-import draw_danevit_hartenberg
+import positioning_functions
 import RobotObject
 
 import os
@@ -14,7 +14,7 @@ class Robotics (Workbench):
     def Initialize(self):
         self.__class__.Icon = os.path.join(FreeCAD.getHomePath(), 'Mod', 'FreeCAD-robotic-addon', 'Resources', 'icons', 'robotArm.svg')
 
-        self.list = [ "CreateRobotCommand", "DrawDanevitHartenbergCommand"]
+        self.list = [ "CreateRobotCommand", "testingCommand"]
         self.appendToolbar("My Commands", self.list)
         self.appendMenu("My New Menu", self.list)
         self.appendMenu(["An existing Menu", "My submenu"], self.list)

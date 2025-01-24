@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from draw_danevit_hartenberg import drawDanevitHartenberg
+from positioning_functions import createDanevitHartenberg
 from main_utils import get_robot
 
 class RobotObject:
@@ -18,7 +18,7 @@ class RobotObject:
         obj.addProperty("App::PropertyIntegerList", "PrevEdges", "Robot", "List of previous edges").PrevEdges = []
         
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
-        obj.addProperty("App::PropertyLinkList", "BodyCoordinateSystems", "Robot", "List of body coordinate systems").BodyCoordinateSystems = []
+        obj.addProperty("App::PropertyLinkList", "BodyJointCoordinateSystems", "Robot", "List of body coordinate systems").BodyJointCoordinateSystems = []
         obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
 
         obj.addProperty("App::PropertyLinkList", "AngleConstraints", "Robot", "List of angle constraints").AngleConstraints = []
@@ -101,8 +101,10 @@ def initialize_robot():
     doc.recompute()
 
     connectRobotToAssembly()
-    drawDanevitHartenberg()
-    #drawPlanesOnDHCoordinates()
+    createDanevitHartenberg()
+    #createLocalCoordinateOnBodies()
+    
+    
 
     #createAngleConstrains()
     return robot_obj
@@ -202,38 +204,31 @@ def connectRobotToAssembly():
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
 
-def drawPlanesOnDHCoordinates():
+def createLocalCoordinateOnBodies():
     doc = FreeCAD.ActiveDocument
     robot = get_robot()
+    BodyJointCoordinateSystems = []
     for i, body, edge in zip(range(len(robot.Bodies)), robot.Bodies, robot.Edges):
         print(f"Body: {body.Name}, Edge: {edge}")
-        lcs = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i+1}')
+        lcs = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i}')
         original_body = body.LinkedObject
         original_body.addObject(lcs)
 
         circle = doc.getObject(original_body.Name).Shape.Edges[edge].Curve # Finds the circle of the constraint
         lcs.Placement.Base = circle.Center # Sets the base of the coordinate system to the center of the circle
 
-        z_axis = circle.Axis
-        temp = FreeCAD.Vector(1,0,0) if z_axis.cross(FreeCAD.Vector(1,0,0)).Length > 1e-6 else FreeCAD.Vector(0,1,0)
-        x_axis = z_axis.cross(temp).normalize()
-        y_axis = z_axis.cross(x_axis)
+        o_A_dh = doc.getObject(f"LCS_link_{i}").Placement.Rotation
+        o_A_b  = body.Placement.Rotation
+        b_A_dh = o_A_b.inverted() * o_A_dh
+        
+        lcs.Placement.Rotation = b_A_dh
+        BodyJointCoordinateSystems.append(lcs)
 
-        lcs.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
+    robot.BodyJointCoordinateSystems = BodyJointCoordinateSystems
+        
 
-        lcs.ViewObject.Visibility = False
 
-        datum_plane = original_body.newObject('PartDesign::Plane', f'plane_on_body_{i+1}')
-        datum_plane.AttachmentOffset = FreeCAD.Placement(
-            FreeCAD.Vector(0.0, 0.0, 0.0),  # Position the plane
-            FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 0.0)  # No rotation
-        )
-        datum_plane.MapReversed = False
-        datum_plane.AttachmentSupport = [(lcs, '')]  # Attach to the LCS
-        datum_plane.MapPathParameter = 0.0
-        datum_plane.MapMode = 'ObjectXZ'  # Align the plane to the X-Z plane of the LCS
-        datum_plane.recompute()
-        datum_plane.ViewObject.Visibility = False
+
 
 
 
@@ -275,7 +270,7 @@ def createAngleConstrains():
         print(f'{robot.Base.Name}.plane_on_DH_coordinates_{i+1}.Plane')
 
     robot.AngleConstraints = angle_constraints
-    drawDanevitHartenberg()
+    createDanevitHartenberg()
 
     reSolve()
 

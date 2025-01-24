@@ -39,11 +39,8 @@ class RobotObject:
     
     def onChanged(self, obj, prop):
         """Handle property changes."""
-        if prop == "Constraints":
-            FreeCAD.Console.PrintMessage(f"Constraints updated: {obj.Constraints}\n")
         if prop == "Angles":
             if obj.BodyJointCoordinateSystems:
-                FreeCAD.Console.PrintMessage(f"Angles updated: {obj.Angles}\n")
                 updateAngles()
 
 
@@ -84,10 +81,6 @@ def initialize_robot():
     if doc is None:
         doc = FreeCAD.newDocument()
 
-    # Create a group to contain the robot
-    #robot_group = doc.addObject("App::DocumentObjectGroup", "RobotContainer")
-    #robot_group.Label = "Robot Container"
-
     # Create the Robot object
     robot_obj = doc.addObject("App::FeaturePython", "Robot")
     RobotObject(robot_obj)  # Initialize the custom robot object
@@ -95,19 +88,17 @@ def initialize_robot():
 
     # Add the Robot object to the group
     doc.Assembly.addObject(robot_obj)
-
     doc.recompute()
 
     connectRobotToAssembly()
     createDanevitHartenberg()
-    
 
-    #createAngleConstrains()
     return robot_obj
 
 
 
 # ----------------- Adding the GUI Button -----------------
+
 class CreateRobotCommand:
     """A FreeCAD command to create a Robot object."""
 
@@ -130,6 +121,11 @@ class CreateRobotCommand:
     
 FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())
 
+
+
+
+
+# ----------------- Connecting the Robot to the Assembly -----------------
 class Link:
     def __init__(self, joint, body, edge = 0):
         self.Joint = joint
@@ -146,17 +142,12 @@ def connectRobotToAssembly():
         FreeCAD.Console.PrintMessage("No robot object found\n")
         return
         
-
-
-    #joints = FreeCADGui.Selection.getSelection()
-    joints = [j for j in doc.Joints.OutList if hasattr(j, 'JointType') and j.JointType == 'Revolute']
+    joints = [j for j in doc.Joints.OutList if hasattr(j, 'JointType') and j.JointType == 'Revolute'] # Get all the revolute joints
 
     for obj in doc.Joints.OutList:
         if hasattr(obj, 'ObjectToGround'):
-
             # Correct the placement of the first body to the identity matrix to have consistent baseframe with assembly
             first_body = obj.ObjectToGround
-            
             identity_matrix = FreeCAD.Matrix(
                 FreeCAD.Vector(1, 0, 0),
                 FreeCAD.Vector(0, 1, 0),
@@ -171,7 +162,6 @@ def connectRobotToAssembly():
             link_prev_arr = []
             print(f"Corrected placement of {first_body.Name} to {first_body.Placement.Matrix}\n")
             
-
     for _ in joints:
         for joint in joints: # Double loop to add in the right order
 
@@ -195,10 +185,8 @@ def connectRobotToAssembly():
     robot.Bodies = [link.Body for link in link_arr]
     robot.Edges = [link.Edge for link in link_arr]
     robot.Angles = [0 for _ in link_arr]
-
     robot.PrevBodies = [link.Body for link in link_prev_arr]
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
-
-    for constraint in robot.Constraints:
+    for constraint in robot.Constraints: # Deactivate the constraints so the assembly does not solve the joints
         constraint.Activated = False

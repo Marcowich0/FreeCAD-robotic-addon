@@ -76,7 +76,8 @@ def createDanevitHartenberg():
 
             lcs_arr.append(lcs_dh)
 
-    robot.CoordinateSystems, robot.BodyJointCoordinateSystem = lcs_arr, BodyJointCoordinateSystems
+    robot.CoordinateSystems = lcs_arr
+    robot.BodyJointCoordinateSystems = BodyJointCoordinateSystems
 
 
 

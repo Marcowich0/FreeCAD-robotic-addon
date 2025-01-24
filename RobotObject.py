@@ -4,6 +4,7 @@ import os
 import re
 from positioning_functions import createDanevitHartenberg, updateAngles
 from main_utils import get_robot
+import numpy as np
 
 class RobotObject:
     def __init__(self, obj):
@@ -92,6 +93,8 @@ def initialize_robot():
 
     connectRobotToAssembly()
     createDanevitHartenberg()
+
+    findDHPerameters()
 
     return robot_obj
 
@@ -190,3 +193,59 @@ def connectRobotToAssembly():
 
     for constraint in robot.Constraints: # Deactivate the constraints so the assembly does not solve the joints
         constraint.Activated = False
+
+
+
+
+def format_value(val, ndigits=3):
+    # First, convert to a string with a fixed number of decimal places
+    s = f"{val:.{ndigits}f}"
+    # Then remove trailing zeros and a trailing dot if it becomes unnecessary
+    s = s.rstrip('0').rstrip('.')
+    return s
+
+
+
+def findDHPerameters():
+    import sympy as sp
+    robot = get_robot()
+    old_angles = robot.Angles
+    robot.Angles = [0 for _ in robot.Angles]
+
+    DH_transformations = []
+    DH_parameters = []
+
+    for body, lcs_ref in zip(robot.Bodies, robot.BodyJointCoordinateSystems):
+        o_A_ol = body.Placement.Matrix 
+        ol_A_dh = lcs_ref.Placement.Matrix
+        o_A_dh = o_A_ol * ol_A_dh
+        DH_transformations.append(np.array(o_A_dh.A).reshape(4, 4))
+
+    
+    theta_s, d_s, a_s, alpha_s = sp.symbols('theta d a alpha')
+    DH_symbolic = sp.Matrix([
+        [sp.cos(theta_s), -sp.sin(theta_s)*sp.cos(alpha_s), sp.sin(theta_s)*sp.sin(alpha_s), a_s*sp.cos(theta_s)],
+        [sp.sin(theta_s), sp.cos(theta_s)*sp.cos(alpha_s), -sp.cos(theta_s)*sp.sin(alpha_s), a_s*sp.sin(theta_s)],
+        [0, sp.sin(alpha_s), sp.cos(alpha_s), d_s],
+        [0, 0, 0, 1]
+    ]).subs({theta_s: 0})
+    
+    for i, DH in enumerate(DH_transformations):
+        DH_sympy = sp.Matrix(DH)
+        
+        d = round(DH_sympy[2, 3], 3)
+        a = round(DH_sympy[0, 3], 3)
+
+        tmp1 = sp.acos(DH_sympy[2, 2])
+        tmp2 = sp.asin(DH_sympy[2, 1])
+        alpha_val = tmp1 if tmp1 == tmp2 else -tmp1
+        alpha = round(alpha_val/np.pi*180, 3)
+        
+        DH_parameters.append([
+            f"theta_{i}",
+            f"{d:.3f}",
+            f"{a:.3f}",
+            f"{alpha:.3f}"
+        ])
+        
+    print(DH_parameters)

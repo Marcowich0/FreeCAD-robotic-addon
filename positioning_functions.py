@@ -33,69 +33,51 @@ FreeCADGui.addCommand('testCommand', testCommand())
 
 
 def createDanevitHartenberg():
-    doc = FreeCAD.ActiveDocument
-    obj = get_robot()
-    """Draw the robot using the Denavit-Hartenberg parameters."""
-    robot = get_robot()
-    prev_bodies = robot.PrevBodies
-    prev_edges = robot.PrevEdges
-
-    lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_0' )
-    prev_bodies[0].LinkedObject.addObject(lcs_dh)
-    lcs_dh.Placement.Base = prev_bodies[0].LinkedObject.Shape.Edges[prev_edges[0]].Curve.Center
-
-    lcs_arr = [lcs_dh]
-
+    doc, robot = FreeCAD.ActiveDocument, get_robot()
+    prev_bodies, prev_edges = robot.PrevBodies, robot.PrevEdges
+    lcs_arr = [doc.addObject('PartDesign::CoordinateSystem', 'LCS_link_0')]
+    prev_bodies[0].LinkedObject.addObject(lcs_arr[0])
+    lcs_arr[0].Placement.Base = prev_bodies[0].LinkedObject.Shape.Edges[prev_edges[0]].Curve.Center
     BodyJointCoordinateSystems = []
 
-    for i, body in zip(range(1,len(obj.Constraints)+1), obj.Bodies):
-
-        print(f"Creating LCS for joint {i}") # debug
-        # Creating ref to last dh
+    for i, body in zip(range(1,len(robot.Constraints)+1), robot.Bodies):
+        print(f"Creating LCS for joint {i}") 
         lcs_ref = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i-1}')
         body.LinkedObject.addObject(lcs_ref)
         
-        o_A_ol = prev_bodies[i-1].Placement.Matrix
-
-        print(f" Angle_reference_LCS_{i-1},   o_A_ol: {o_A_ol}") # debug
-        ol_A_dh = lcs_arr[-1].Placement.Matrix
-        o_A_b  = body.Placement.Matrix
-
-        b_A_dh = o_A_b.inverse() * o_A_ol * ol_A_dh
+        o_A_ol = prev_bodies[i-1].Placement.Matrix      # Local origo of previous body to glocal origo
+        ol_A_dh = lcs_arr[-1].Placement.Matrix          # Danevit-Hartenberg to local origo 
+        o_A_b  = body.Placement.Matrix                  # Local origo of current body to global origo
+        b_A_dh = o_A_b.inverse() * o_A_ol * ol_A_dh     # Danevit-Hartenberg in current body coordinate system
         
         lcs_ref.Placement.Matrix = b_A_dh
         BodyJointCoordinateSystems.append(lcs_ref)
 
-        
-        if i < len(obj.Constraints):
+        if i < len(robot.Constraints):
             print(f" -- Creating DH for joint {i}") # debug
-            lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i}' ) # Adds coordinate system to the document
+            lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i}' ) 
             body.LinkedObject.addObject(lcs_dh)
 
             lcs_dh.Placement.Base = body.LinkedObject.Shape.Edges[prev_edges[i]].Curve.Center # Sets the base of the coordinate system to the center of the circle
             
             last_x = lcs_ref.Placement.Rotation.multVec(FreeCAD.Vector(1,0,0)) 
             last_z = lcs_ref.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1)) 
+            circle = body.LinkedObject.Shape.Edges[prev_edges[i]].Curve 
             
-            circle = body.LinkedObject.Shape.Edges[prev_edges[i]].Curve # Finds the circle of the constraint
-            parallel = last_z.cross(circle.Axis).Length < 1e-6 # Checks if the circle axis is parallel to the last z-axis
-            print(f"parallel: {parallel}") # debug
-            if parallel:
+            if last_z.cross(circle.Axis).Length < 1e-6: # If the circle axis is parallel to the last z-axis
                 z_axis = last_z
                 x_axis = last_x
-
             else:
                 z_axis = circle.Axis # Sets the axis of the coordinate system to the axis of the circle
                 x_axis = last_z.cross(z_axis)
 
             y_axis = z_axis.cross(x_axis)
-
-            lcs_dh.Placement.Rotation =  FreeCAD.Rotation(x_axis, y_axis, z_axis)
+            lcs_dh.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
 
             lcs_arr.append(lcs_dh)
 
-    robot.CoordinateSystems = lcs_arr
-    robot.BodyJointCoordinateSystems = BodyJointCoordinateSystems
+    robot.CoordinateSystems, robot.BodyJointCoordinateSystem = lcs_arr, BodyJointCoordinateSystems
+
 
 
 
@@ -115,8 +97,6 @@ def updateAngles():
         
         body_ref.Placement.Matrix =  o_A_b 
         
-        
-
 
 
 

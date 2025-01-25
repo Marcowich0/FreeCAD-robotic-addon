@@ -44,6 +44,7 @@ def createDanevitHartenberg():
         print(f"Creating LCS for joint {i}") 
         lcs_ref = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i-1}')
         body.LinkedObject.addObject(lcs_ref)
+        lcs_ref.ViewObject.Visibility = False
         
         o_A_ol = prev_bodies[i-1].Placement.Matrix      # Local origo of previous body to glocal origo
         ol_A_dh = lcs_arr[-1].Placement.Matrix          # Danevit-Hartenberg to local origo 
@@ -89,6 +90,8 @@ def updateAngles():
     lcs_ref_list = robot.BodyJointCoordinateSystems
     bodies_ref_list = robot.Bodies
 
+    robot.Angles = [(angle + 180) % 360 - 180 for angle in robot.Angles]
+
 
     for lcs_dh, body_dh, lcs_ref, body_ref, angle in zip(lcs_dh_list, bodies_dh_list, lcs_ref_list, bodies_ref_list, robot.Angles):
         o_A_ol = body_dh.Placement.Matrix
@@ -130,17 +133,32 @@ class flipDHCommand:
 FreeCADGui.addCommand('flipDHCommand', flipDHCommand())
 
 
+from main_utils import mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation
+import numpy as np
 
 def flipDH():
     robot = get_robot()
-    selections = FreeCADGui.Selection.getSelection()
+    body = FreeCADGui.Selection.getSelection()[0]
 
-    for sel in selections:
-        body = sel
-        idx = robot.Bodies.index(body)
-        print(f"Flipping {body.Name}, idx: {idx}")
-        robot.BodyJointCoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(0,0,1), 90)
-        updateAngles()
+    idx = robot.Bodies.index(body)
+    print(f"Flipping {body.Name}, idx: {idx}")
+
+    o_A_o1 = mat_to_numpy(body.Placement.Matrix)
+    o1_A_o = np.linalg.inv(o_A_o1)
+
+    o1_A_ref = mat_to_numpy(robot.BodyJointCoordinateSystems[idx].Placement.Matrix)
+    o1_A_dh = mat_to_numpy(robot.CoordinateSystems[idx+1].Placement.Matrix)
+    
+    ref_A_dh = np.linalg.inv(o1_A_ref) @ o1_A_dh
+
+    o1_A_ref = o1_A_ref @ np_rotation(-np.pi/2, 'z')
+    ref_A_dh = np_rotation(np.pi/2, 'z') @ ref_A_dh
+    o1_A_dh = o1_A_ref @ ref_A_dh
+
+    robot.BodyJointCoordinateSystems[idx].Placement.Rotation = FreeCAD.Placement(numpy_to_mat(o1_A_ref)).Rotation
+    robot.CoordinateSystems[idx+1].Placement.Rotation = FreeCAD.Placement(numpy_to_mat(o1_A_dh)).Rotation
+
+    updateAngles()
 
 
 

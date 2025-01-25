@@ -196,13 +196,13 @@ def connectRobotToAssembly():
 
 
 class FindDHParametersCommand:
-    """A FreeCAD command to create a Robot object."""
+    """A FreeCAD command to calculate Danevit Hartenberg parameters based on robot object."""
 
     def GetResources(self):
         return {
             'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'danevitHartenberg.svg'),
-            'MenuText': 'Create Robot',
-            'ToolTip': 'Instantiate a new Robot'
+            'MenuText': 'Calculate DH Parameters',
+            'ToolTip': 'Finds the Danevit Hartenberg parameters for the robot'
         }
 
     def Activated(self):
@@ -230,15 +230,6 @@ def findDHPerameters():
         ol_A_dh = lcs_ref.Placement.Matrix
         o_A_dh = o_A_ol * ol_A_dh
         DH_transformations.append(np.array(o_A_dh.A).reshape(4, 4))
-
-    
-    theta_s, d_s, a_s, alpha_s = sp.symbols('theta d a alpha')
-    DH_symbolic = sp.Matrix([
-        [sp.cos(theta_s), -sp.sin(theta_s)*sp.cos(alpha_s), sp.sin(theta_s)*sp.sin(alpha_s), a_s*sp.cos(theta_s)],
-        [sp.sin(theta_s), sp.cos(theta_s)*sp.cos(alpha_s), -sp.cos(theta_s)*sp.sin(alpha_s), a_s*sp.sin(theta_s)],
-        [0, sp.sin(alpha_s), sp.cos(alpha_s), d_s],
-        [0, 0, 0, 1]
-    ]).subs({theta_s: 0})
     
     for i, DH in enumerate(DH_transformations):
         DH_sympy = sp.Matrix(DH)

@@ -104,7 +104,7 @@ def updateAngles():
 
 
 
-class flipDHCommand:
+class rotateBodyZeroCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
 
     def __init__(self):
@@ -118,7 +118,7 @@ class flipDHCommand:
         }
     
     def Activated(self):
-        flipDH()
+        rotateBodyZero()
 
     def IsActive(self):        
         sel = FreeCADGui.Selection.getSelection()
@@ -130,21 +130,18 @@ class flipDHCommand:
                 return False
         return True
 
-FreeCADGui.addCommand('flipDHCommand', flipDHCommand())
+FreeCADGui.addCommand('rotateBodyZeroCommand', rotateBodyZeroCommand())
 
 
 from main_utils import mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation
 import numpy as np
 
-def flipDH():
+def rotateBodyZero():
     robot = get_robot()
     body = FreeCADGui.Selection.getSelection()[0]
 
     idx = robot.Bodies.index(body)
     print(f"Flipping {body.Name}, idx: {idx}")
-
-    o_A_o1 = mat_to_numpy(body.Placement.Matrix)
-    o1_A_o = np.linalg.inv(o_A_o1)
 
     o1_A_ref = mat_to_numpy(robot.BodyJointCoordinateSystems[idx].Placement.Matrix)
     o1_A_dh = mat_to_numpy(robot.CoordinateSystems[idx+1].Placement.Matrix)
@@ -180,13 +177,10 @@ class changeRotationDirectionCommand:
     def Activated(self):
         changeRotationDirection()
 
-    def IsActive(self):
-        if get_robot() == None:
-            return False
-        
+    def IsActive(self):        
         sel = FreeCADGui.Selection.getSelection()
 
-        if not sel:
+        if not sel or get_robot() == None:
             return False
     
         for s in sel:

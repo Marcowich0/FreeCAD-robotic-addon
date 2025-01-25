@@ -114,15 +114,9 @@ class RobotAnglesCommand:
         }
 
     def IsActive(self):
-        """
-        The command is active only if we have a valid robot from get_robot().
-        """
         return True if get_robot() is not None else False
 
     def Activated(self):
-        """
-        Called when the user invokes the command.
-        """
         robot = get_robot()
         if robot is None:
             FreeCAD.Console.PrintError("No robot found.\n")

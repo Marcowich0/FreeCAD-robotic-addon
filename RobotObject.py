@@ -94,8 +94,6 @@ def initialize_robot():
     connectRobotToAssembly()
     createDanevitHartenberg()
 
-    findDHPerameters()
-
     return robot_obj
 
 
@@ -197,13 +195,25 @@ def connectRobotToAssembly():
 
 
 
-def format_value(val, ndigits=3):
-    # First, convert to a string with a fixed number of decimal places
-    s = f"{val:.{ndigits}f}"
-    # Then remove trailing zeros and a trailing dot if it becomes unnecessary
-    s = s.rstrip('0').rstrip('.')
-    return s
+class FindDHParametersCommand:
+    """A FreeCAD command to create a Robot object."""
 
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'danevitHartenberg.svg'),
+            'MenuText': 'Create Robot',
+            'ToolTip': 'Instantiate a new Robot'
+        }
+
+    def Activated(self):
+        """Called when the command is activated (button clicked)."""
+        findDHPerameters()
+
+    def IsActive(self):
+        """Determine if the command should be active."""
+        return True if get_robot() != None else False
+    
+FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
 
 
 def findDHPerameters():
@@ -247,5 +257,6 @@ def findDHPerameters():
             f"{a:.3f}",
             f"{alpha:.3f}"
         ])
+    robot.Angles = old_angles
         
     print(DH_parameters)

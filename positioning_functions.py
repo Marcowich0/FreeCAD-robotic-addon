@@ -113,25 +113,23 @@ class flipDHCommand:
             'MenuText': 'Rotate Joint',
             'ToolTip': 'Rotate the zero-state of a joint 90 degrees'
         }
-
+    
     def Activated(self):
         flipDH()
 
-    def IsActive(self):
-        if get_robot() == None:
-            return False
-        
+    def IsActive(self):        
         sel = FreeCADGui.Selection.getSelection()
-        if not sel:
+        if not sel or get_robot() == None:
             return False
         
         for s in sel:
             if s not in get_robot().Bodies:
                 return False
-
         return True
 
 FreeCADGui.addCommand('flipDHCommand', flipDHCommand())
+
+
 
 def flipDH():
     robot = get_robot()
@@ -141,9 +139,7 @@ def flipDH():
         body = sel
         idx = robot.Bodies.index(body)
         print(f"Flipping {body.Name}, idx: {idx}")
-        robot.BodyJointCoordinateSystems[idx].Placement.Rotation = robot.BodyJointCoordinateSystems[idx].Placement.Rotation * FreeCAD.Rotation(FreeCAD.Vector(0,0,1), 90)
-        if idx+1 < len(robot.CoordinateSystems):
-            robot.CoordinateSystems[idx+1].Placement.Rotation = robot.CoordinateSystems[idx+1].Placement.Rotation * FreeCAD.Rotation(FreeCAD.Vector(0,0,1), 90)
+        robot.BodyJointCoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(0,0,1), 90)
         updateAngles()
 
 
@@ -191,11 +187,8 @@ def changeRotationDirection():
         body = sel
         idx = robot.Bodies.index(body)
         print(f"Flipping DH Coordinate system {body.Name}, idx: {idx}")
-        cs = robot.CoordinateSystems[idx]
-        cs.Placement.Rotation = cs.Placement.Rotation * FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 180) # Swap direction of the z-axis
-
-        cs_ref = robot.BodyJointCoordinateSystems[idx]
-        cs_ref.Placement.Rotation = cs_ref.Placement.Rotation * FreeCAD.Rotation(FreeCAD.Vector(1,0,0), 180)
+        robot.CoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 180) # Swap direction of the z-axis
+        robot.BodyJointCoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(1,0,0), 180)
 
         updateAngles()
 

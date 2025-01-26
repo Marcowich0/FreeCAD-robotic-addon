@@ -22,6 +22,8 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "BodyJointCoordinateSystems", "Robot", "List of body coordinate systems").BodyJointCoordinateSystems = []
         obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
 
+        obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector of the robot").EndEffector = FreeCAD.Vector(0, 0, 0)
+
         obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
@@ -105,7 +107,7 @@ class CreateRobotCommand:
 
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'robotArm.svg'),
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'robotArm2.svg'),
             'MenuText': 'Create Robot',
             'ToolTip': 'Instantiate a new Robot'
         }
@@ -194,60 +196,3 @@ def connectRobotToAssembly():
 
 
 
-
-class FindDHParametersCommand:
-    """A FreeCAD command to calculate Danevit Hartenberg parameters based on robot object."""
-
-    def GetResources(self):
-        return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'danevitHartenberg.svg'),
-            'MenuText': 'Calculate DH Parameters',
-            'ToolTip': 'Finds the Danevit Hartenberg parameters for the robot'
-        }
-
-    def Activated(self):
-        """Called when the command is activated (button clicked)."""
-        findDHPerameters()
-
-    def IsActive(self):
-        """Determine if the command should be active."""
-        return True if get_robot() != None else False
-    
-FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
-
-
-def findDHPerameters():
-    import sympy as sp
-    robot = get_robot()
-    old_angles = robot.Angles
-    robot.Angles = [0 for _ in robot.Angles]
-
-    DH_transformations = []
-    DH_parameters = []
-
-    for body, lcs_ref in zip(robot.Bodies, robot.BodyJointCoordinateSystems):
-        o_A_ol = body.Placement.Matrix 
-        ol_A_dh = lcs_ref.Placement.Matrix
-        o_A_dh = o_A_ol * ol_A_dh
-        DH_transformations.append(np.array(o_A_dh.A).reshape(4, 4))
-    
-    for i, DH in enumerate(DH_transformations):
-        DH_sympy = sp.Matrix(DH)
-        
-        d = round(DH_sympy[2, 3], 3)
-        a = round(DH_sympy[0, 3], 3)
-
-        tmp1 = sp.acos(DH_sympy[2, 2])
-        tmp2 = sp.asin(DH_sympy[2, 1])
-        alpha_val = tmp1 if tmp1 == tmp2 else -tmp1
-        alpha = round(alpha_val/np.pi*180, 3)
-        
-        DH_parameters.append([
-            f"theta_{i}",
-            f"{d:.3f}",
-            f"{a:.3f}",
-            f"{alpha:.3f}"
-        ])
-    robot.Angles = old_angles
-        
-    print(DH_parameters)

@@ -21,8 +21,7 @@ class testCommand:
 
     def Activated(self):
         """Called when the command is activated (e.g., button pressed)."""
-        #drawDanevitHartenberg()
-        changeRotationDirection()
+        solve_ik_nsolve_system(720, 120, 0)
 
     def IsActive(self):
         """Determines if the command is active."""
@@ -102,7 +101,7 @@ def updateAngles():
         body_ref.Placement.Matrix =  o_A_b 
         
 
-
+######################################################################################################
 
 class rotateBodyZeroCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
@@ -159,7 +158,7 @@ def rotateBodyZero():
 
 
 
-
+##################################################################################################################
 
 class changeRotationDirectionCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
@@ -207,4 +206,173 @@ def changeRotationDirection():
 
 
         
+##################################################################################################
+
+class defineEndEffectorCommand:
+    """Command to draw the robot using Denavit-Hartenberg parameters."""
+
+    def __init__(self):
+        pass
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'endEffector.svg'),
+            'MenuText': 'Define End Effector',
+            'ToolTip': 'Defines the position of the end effector based on a point on the last link'
+        }
+
+    def Activated(self):
+        defineEndEffector()
+
+    def IsActive(self):        
+        sel = FreeCADGui.Selection.getSelection()
+
+        sel = FreeCADGui.Selection.getSelectionEx()
+        if sel:
+            sobj = sel[0]
+            sub_objects = sobj.SubObjects
+            
+            if sub_objects:
+                first_subobj = sub_objects[0]
+                
+                # For a vertex, you can get its 3D coordinates:
+                if first_subobj.ShapeType == "Vertex":
+                    return True
+
+        return False
+
+FreeCADGui.addCommand('defineEndEffectorCommand', defineEndEffectorCommand())
+
+
+
+def defineEndEffector():
+    robot = get_robot()
+    sel = FreeCADGui.Selection.getSelectionEx()
+
+    if sel:
+        sobj = sel[0]
+        obj = sobj.Object
+        sub_names = sobj.SubElementNames
+        sub_objects = sobj.SubObjects
+        
+        if sub_objects:
+            first_subobj = sub_objects[0]
+            
+            # For a vertex, you can get its 3D coordinates:
+            if first_subobj.ShapeType == "Vertex":
+                print("Vertex coordinates:", first_subobj.Point)
+                robot.EndEffector = first_subobj.Point
+
+
+
+
+
+##################################################################################################
+
+import sympy as sp
+
+def defineSympyDHTranformationMatrices():
+    robot = get_robot()
+    DH_perameters = findDHPerameters()
+
+    T_arr = [sp.Matrix([[1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [0, 0, 0, 1]])]
+    for theta, d, a, alpha in DH_perameters:
+        DH_mat = sp.Matrix([[sp.cos(theta), -sp.sin(theta)*sp.cos(alpha), sp.sin(theta)*sp.sin(alpha), a*sp.cos(theta)],
+                            [sp.sin(theta), sp.cos(theta)*sp.cos(alpha), -sp.cos(theta)*sp.sin(alpha), a*sp.sin(theta)],
+                            [0, sp.sin(alpha), sp.cos(alpha), d],
+                            [0, 0, 0, 1]])
+        T_arr.append(T_arr[-1]*DH_mat)
+
+    end = sp.Matrix([[0,0,0,robot.EndEffector.x],
+                    [0,0,0,robot.EndEffector.y],
+                    [0,0,0,robot.EndEffector.z],
+                    [0,0,0,1]])
+    T_arr.append(T_arr[-1]*end)
+    print(T_arr[-1]*sp.Matrix([0,0,0,1]))
+    T_arr.pop(0)
+    T_arr = [sp.simplify(T) for T in T_arr]
+    return T_arr
+
+
+
+from sympy import nsolve
+
+def solve_ik_nsolve_system(x_des, y_des, z_des):
+    robot = get_robot()
+    T_arr = defineSympyDHTranformationMatrices()
+    theta_syms = [sp.symbols(f'theta_{i}') for i in range(len(robot.Constraints))]
+    p_end = (T_arr[-1]*sp.Matrix([0, 0, 0, 1]))
+
+    eqs = [
+        p_end[0] - x_des,
+        p_end[1] - y_des,
+        p_end[2] - z_des
+    ]
+    # 'init_guess' must be a tuple of initial guesses matching 'theta_syms'
+    sol = nsolve(eqs, theta_syms, robot.Angles)
+    # nsolve_system returns (sol_theta0, sol_theta1, ...)
+    print({theta_syms[i]: float(sol[i]) for i in range(len(theta_syms))})
+    return {theta_syms[i]: float(sol[i]) for i in range(len(theta_syms))}
+
+
+
+
+##################################################################################################
+
+
+
+class FindDHParametersCommand:
+    """A FreeCAD command to calculate Danevit Hartenberg parameters based on robot object."""
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'danevitHartenberg.svg'),
+            'MenuText': 'Calculate DH Parameters',
+            'ToolTip': 'Finds the Danevit Hartenberg parameters for the robot'
+        }
+
+    def Activated(self):
+        """Called when the command is activated (button clicked)."""
+        print(findDHPerameters())
+
+    def IsActive(self):
+        """Determine if the command should be active."""
+        return True if get_robot() != None else False
     
+FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
+
+
+def findDHPerameters():
+    import sympy as sp
+    robot = get_robot()
+    old_angles = robot.Angles
+    robot.Angles = [0 for _ in robot.Angles]
+
+    DH_transformations = []
+    DH_parameters = []
+
+    for body, lcs_ref in zip(robot.Bodies, robot.BodyJointCoordinateSystems):
+        o_A_ol = body.Placement.Matrix 
+        ol_A_dh = lcs_ref.Placement.Matrix
+        o_A_dh = o_A_ol * ol_A_dh
+        DH_transformations.append(np.array(o_A_dh.A).reshape(4, 4))
+    
+
+    theta = [sp.symbols(f'theta_{i}') for i in range(len(robot.Constraints))]
+    for i, DH in enumerate(DH_transformations):
+        DH_sympy = sp.Matrix(DH)
+        
+        d = round(DH_sympy[2, 3], 3)
+        a = round(DH_sympy[0, 3], 3)
+
+        tmp1 = sp.acos(DH_sympy[2, 2])
+        tmp2 = sp.asin(DH_sympy[2, 1])
+        alpha_val = tmp1 if tmp1 == tmp2 else -tmp1
+        alpha = round(alpha_val/np.pi*180, 3)
+        
+        DH_parameters.append([theta[i], d, a, alpha])
+    robot.Angles = old_angles
+    return DH_parameters

@@ -17,23 +17,33 @@ class ToTargetPointCommand:
         }
 
     def Activated(self):
-        solve_ik(self.get_target_position())
+        global_pos = self.get_target_position()
+        if global_pos:
+            solve_ik(global_pos)
 
     def IsActive(self):
         return self.is_target_selected() and get_robot() is not None
 
     def get_target_position(self):
+        """
+        Returns the global 3D coordinates of the selected vertex—the exact 
+        same coordinates you would see in the Measure tool.
+        """
         sel = FreeCADGui.Selection.getSelectionEx()
         if sel:
             sobj = sel[0]
-            sub_objects = sobj.SubObjects
-            if sub_objects and sub_objects[0].ShapeType == "Vertex":
-                return sub_objects[0].Point
+            # The selection object stores the 3D pick positions in PickedPoints.
+            # If you've selected a vertex, then sobj.PickedPoints[0] is the global position.
+            if sobj.PickedPoints:
+                return sobj.PickedPoints[0]
         return None
 
     def is_target_selected(self):
         sel = FreeCADGui.Selection.getSelectionEx()
-        return sel and sel[0].SubObjects and sel[0].SubObjects[0].ShapeType == "Vertex"
+        return bool(sel 
+                    and sel[0].SubObjects
+                    and sel[0].SubObjects[0].ShapeType == "Vertex" 
+                    and sel[0].PickedPoints)
 
 FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
@@ -44,6 +54,8 @@ FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 # Add to positioning_functions.py
 def solve_ik(target_pos, max_iterations=100, tolerance=0.5, damping=0.1):
+
+    print (f"Attemping to solve IK for target position: {target_pos}")
     """
     Solves inverse kinematics to reach target position with minimal joint movement.
     

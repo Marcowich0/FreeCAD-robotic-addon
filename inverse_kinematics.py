@@ -11,7 +11,7 @@ class ToTargetPointCommand:
 
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'solveIK.svg'),
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'toPoint.svg'),
             'MenuText': 'Solve Inverse Kinematics',
             'ToolTip': 'Solve joint angles to reach the selected target point'
         }
@@ -46,6 +46,12 @@ class ToTargetPointCommand:
                     and sel[0].PickedPoints)
 
 FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
+
+
+
+
+
+
 
 
 

@@ -32,8 +32,6 @@ class RobotObject:
         obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
         obj.addProperty("App::PropertyPythonObject", "NumpyJacobian", "Robot", "Numpy Jacobian matrix").NumpyJacobian = None
 
-        obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
-
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
         #obj.setEditorMode("Bodies", 1)  # Make the property read-only
@@ -199,7 +197,6 @@ def connectRobotToAssembly():
                     link_prev_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref2}"), edge2)  )
                     
 
-    robot.Base = link_arr[0].Body
     link_arr.pop(0) # Remove the grounded joint (Is not a motor)
 
     robot.Constraints = [link.Joint for link in link_arr]

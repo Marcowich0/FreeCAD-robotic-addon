@@ -1,7 +1,7 @@
 import FreeCAD
 import FreeCADGui
 
-import positioning_functions
+import forward_kinematics
 import RobotObject
 import angle_sliders
 

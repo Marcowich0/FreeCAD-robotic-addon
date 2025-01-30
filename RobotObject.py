@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from positioning_functions import createDanevitHartenberg, updateAngles, defineTranformationMatrices
+from forward_kinematics import createDanevitHartenberg, updateAngles, defineTranformationMatrices, defineJacobian
 from main_utils import get_robot, updateGlobalEndEffector
 import numpy as np
 import sympy as sp
@@ -21,7 +21,7 @@ class RobotObject:
         
         obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "BodyJointCoordinateSystems", "Robot", "List of body coordinate systems").BodyJointCoordinateSystems = []
-        obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
+        obj.addProperty("App::PropertyFloatList", "Angles", "Robot", "List of angles").Angles = []
 
         obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector of the robot").EndEffector = FreeCAD.Vector(0, 0, 0)
         obj.addProperty("App::PropertyVector", "EndEffectorGlobal", "Robot", "End effector of the robot in global coordinates").EndEffectorGlobal = FreeCAD.Vector(0, 0, 0)
@@ -58,6 +58,7 @@ class RobotObject:
         if prop == "EndEffector":
             if hasattr(obj, 'NumpyTransformations'):
                 defineTranformationMatrices()
+                defineJacobian()
             
                 
 
@@ -111,6 +112,7 @@ def initialize_robot():
     connectRobotToAssembly()
     createDanevitHartenberg()
     defineTranformationMatrices()
+    defineJacobian()
 
     return robot_obj
 

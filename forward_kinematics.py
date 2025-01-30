@@ -4,6 +4,8 @@ import os
 import re
 from main_utils import get_robot, updateGlobalEndEffector
 
+from inverse_kinematics import solve_ik
+
 
 class testCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
@@ -21,8 +23,7 @@ class testCommand:
 
     def Activated(self):
         """Called when the command is activated (e.g., button pressed)."""
-        defineTranformationMatrices()
-        #defineSympyJacobian()
+        solve_ik(FreeCAD.Vector(0, 800, 800))
 
     def IsActive(self):
         """Determines if the command is active."""
@@ -304,21 +305,20 @@ def defineTranformationMatrices():
     updateGlobalEndEffector()
 
 
-def defineSympyJacobian():
+def defineJacobian():
     robot = get_robot()
-    if not robot.SympyTransformations:
-        defineTranformationMatrices()
-    
     T_arr = robot.SympyTransformations
     Jac = []
     On = T_arr[-1][0:3, 3]
-    for i in range(1, len(T_arr)-1):
+    for i in range(1, len(T_arr)):
         Zi = T_arr[i-1][0:3, 2]
         Oi = T_arr[i-1][0:3, 3]
         Jv = Zi.cross(On - Oi)
         Jw = Zi
         Jac.append([*Jv, *Jw])
     robot.Jacobian = sp.Matrix(Jac).T
+    print(robot.Jacobian)
+    print(robot.sympyVariables)
     robot.NumpyJacobian = sp.lambdify(robot.sympyVariables, robot.Jacobian, 'numpy')
     return sp.Matrix(Jac).T
 

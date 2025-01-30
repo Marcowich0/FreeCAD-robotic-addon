@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from main_utils import get_robot
+from main_utils import get_robot, updateGlobalEndEffector
 
 
 class testCommand:
@@ -21,7 +21,8 @@ class testCommand:
 
     def Activated(self):
         """Called when the command is activated (e.g., button pressed)."""
-        defineSympyJacobian()
+        defineTranformationMatrices()
+        #defineSympyJacobian()
 
     def IsActive(self):
         """Determines if the command is active."""
@@ -271,9 +272,11 @@ def defineEndEffector():
 
 import sympy as sp
 
-def defineSympyTranformationMatrices():
+def defineTranformationMatrices():
     robot = get_robot()
     theta = robot.sympyVariables
+    old_angles = robot.Angles
+    robot.Angles = [0 for _ in robot.Angles]
 
     T_arr = [sp.Matrix(mat_to_numpy(robot.CoordinateSystems[0].Placement.Matrix))]
 
@@ -295,15 +298,18 @@ def defineSympyTranformationMatrices():
                        [0,0,0,robot.EndEffector.z],
                        [0,0,0,1]])
     T_arr.append(T_arr[-1] * T_end)
-    robot.DHTransformations = T_arr
+    robot.SympyTransformations = T_arr
+    robot.NumpyTransformations = [sp.lambdify(theta, T, 'numpy') for T in T_arr]
+    robot.Angles = old_angles
+    updateGlobalEndEffector()
 
 
 def defineSympyJacobian():
     robot = get_robot()
-    if not robot.DHTransformations:
-        defineSympyTranformationMatrices()
+    if not robot.SympyTransformations:
+        defineTranformationMatrices()
     
-    T_arr = robot.DHTransformations
+    T_arr = robot.SympyTransformations
     Jac = []
     On = T_arr[-1][0:3, 3]
     for i in range(1, len(T_arr)-1):
@@ -313,6 +319,7 @@ def defineSympyJacobian():
         Jw = Zi
         Jac.append([*Jv, *Jw])
     robot.Jacobian = sp.Matrix(Jac).T
+    robot.NumpyJacobian = sp.lambdify(robot.sympyVariables, robot.Jacobian, 'numpy')
     return sp.Matrix(Jac).T
 
 

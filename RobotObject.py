@@ -2,8 +2,8 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from positioning_functions import createDanevitHartenberg, updateAngles
-from main_utils import get_robot
+from positioning_functions import createDanevitHartenberg, updateAngles, defineTranformationMatrices
+from main_utils import get_robot, updateGlobalEndEffector
 import numpy as np
 import sympy as sp
 
@@ -27,8 +27,10 @@ class RobotObject:
         obj.addProperty("App::PropertyVector", "EndEffectorGlobal", "Robot", "End effector of the robot in global coordinates").EndEffectorGlobal = FreeCAD.Vector(0, 0, 0)
 
         obj.addProperty("App::PropertyPythonObject", "sympyVariables", "Robot", "List of sympy variables").sympyVariables = []
-        obj.addProperty("App::PropertyPythonObject", "DHTransformations", "Robot", "List of sympy transforms").DHTransformations = []
+        obj.addProperty("App::PropertyPythonObject", "SympyTransformations", "Robot", "List of sympy transforms").SympyTransformations = []
+        obj.addProperty("App::PropertyPythonObject", "NumpyTransformations", "Robot", "List of numpy transforms").NumpyTransformations = []
         obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
+        obj.addProperty("App::PropertyPythonObject", "NumpyJacobian", "Robot", "Numpy Jacobian matrix").NumpyJacobian = None
 
         obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
 
@@ -51,7 +53,12 @@ class RobotObject:
         if prop == "Angles":
             if obj.BodyJointCoordinateSystems:
                 updateAngles()
-                #updateGlobalEndEffector()
+                updateGlobalEndEffector()
+
+        if prop == "EndEffector":
+            if hasattr(obj, 'NumpyTransformations'):
+                defineTranformationMatrices()
+            
                 
 
 
@@ -103,6 +110,7 @@ def initialize_robot():
 
     connectRobotToAssembly()
     createDanevitHartenberg()
+    defineTranformationMatrices()
 
     return robot_obj
 
@@ -205,16 +213,3 @@ def connectRobotToAssembly():
         constraint.Activated = False
 
 
-
-
-
-
-def updateGlobalEndEffector():
-    robot = get_robot()
-    if robot.DHTransformations:
-        T_last = robot.DHTransformations[-1].subs({var : sp.rad(angle) for var, angle in zip(robot.sympyVariables, robot.Angles)})
-        robot.EndEffectorGlobal = (float(T_last[0, 3]), float(T_last[1, 3]), float(T_last[2, 3]))
-
-        #body = robot.Bodies[-1]
-        #end = body.Placement.Matrix * FreeCAD.Vector(robot.EndEffector)
-        #robot.EndEffectorGlobal = end

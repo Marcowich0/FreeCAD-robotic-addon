@@ -36,3 +36,10 @@ def np_rotation(angle, axis):
                          [0, 0, 0, 1]])
     
 
+
+
+def updateGlobalEndEffector():
+    robot = get_robot()
+    if robot.NumpyTransformations:
+        T_last = robot.NumpyTransformations[-1](*[float(angle/180*np.pi) for angle in robot.Angles])
+        robot.EndEffectorGlobal = (float(T_last[0, 3]), float(T_last[1, 3]), float(T_last[2, 3]))

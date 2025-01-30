@@ -3,8 +3,47 @@ import FreeCADGui
 import os
 from main_utils import get_robot
 
+
+class ToTargetPointCommand:
+    """Command to solve inverse kinematics for a target position."""
+    def __init__(self):
+        pass
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'solveIK.svg'),
+            'MenuText': 'Solve Inverse Kinematics',
+            'ToolTip': 'Solve joint angles to reach the selected target point'
+        }
+
+    def Activated(self):
+        solve_ik(self.get_target_position())
+
+    def IsActive(self):
+        return self.is_target_selected() and get_robot() is not None
+
+    def get_target_position(self):
+        sel = FreeCADGui.Selection.getSelectionEx()
+        if sel:
+            sobj = sel[0]
+            sub_objects = sobj.SubObjects
+            if sub_objects and sub_objects[0].ShapeType == "Vertex":
+                return sub_objects[0].Point
+        return None
+
+    def is_target_selected(self):
+        sel = FreeCADGui.Selection.getSelectionEx()
+        return sel and sel[0].SubObjects and sel[0].SubObjects[0].ShapeType == "Vertex"
+
+FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
+
+
+
+
+
+
 # Add to positioning_functions.py
-def solve_ik(target_pos, max_iterations=50, tolerance=1.0, damping=0.1):
+def solve_ik(target_pos, max_iterations=100, tolerance=0.5, damping=0.1):
     """
     Solves inverse kinematics to reach target position with minimal joint movement.
     

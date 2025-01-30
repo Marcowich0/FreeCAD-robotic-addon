@@ -16,17 +16,16 @@ class Robotics (Workbench):
     def Initialize(self):
         self.__class__.Icon = os.path.join(FreeCAD.getHomePath(), 'Mod', 'FreeCAD-robotic-addon', 'Resources', 'icons', 'robotArm.svg')
 
-        self.list = [ "CreateRobotCommand", 
-                     "changeRotationDirectionCommand", 
-                     "rotateBodyZeroCommand", 
-                     "FindDHParametersCommand", 
-                     "RobotAnglesCommand", 
-                     "defineEndEffectorCommand" , 
-                     "ToTargetPointCommand",
-                     "testCommand" ]
-        self.appendToolbar("My Commands", self.list)
-        self.appendMenu("My New Menu", self.list)
-        self.appendMenu(["An existing Menu", "My submenu"], self.list)
+        
+        self.appendToolbar("Instantiation", ["CreateRobotCommand"])
+        self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand"])
+        self.appendToolbar("Forward Kinematics", ["FindDHParametersCommand", "RobotAnglesCommand"])
+        self.appendToolbar("Inverse Kinematics", ["ToTargetPointCommand"])
+        self.appendToolbar("Test", ["testCommand"])
+
+
+        #self.appendMenu("My New Menu", self.list)
+        #self.appendMenu(["An existing Menu", "My submenu"], self.list)
 
     def Activated(self):
         print(self.__class__.Icon)

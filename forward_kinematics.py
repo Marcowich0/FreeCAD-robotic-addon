@@ -317,8 +317,6 @@ def defineJacobian():
         Jw = Zi
         Jac.append([*Jv, *Jw])
     robot.Jacobian = sp.Matrix(Jac).T
-    print(robot.Jacobian)
-    print(robot.sympyVariables)
     robot.NumpyJacobian = sp.lambdify(robot.sympyVariables, robot.Jacobian, 'numpy')
     return sp.Matrix(Jac).T
 

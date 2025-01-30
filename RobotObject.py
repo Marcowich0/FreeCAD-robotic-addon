@@ -5,6 +5,7 @@ import re
 from positioning_functions import createDanevitHartenberg, updateAngles
 from main_utils import get_robot
 import numpy as np
+import sympy as sp
 
 class RobotObject:
     def __init__(self, obj):
@@ -23,6 +24,11 @@ class RobotObject:
         obj.addProperty("App::PropertyIntegerList", "Angles", "Robot", "List of angles").Angles = []
 
         obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector of the robot").EndEffector = FreeCAD.Vector(0, 0, 0)
+        obj.addProperty("App::PropertyVector", "EndEffectorGlobal", "Robot", "End effector of the robot in global coordinates").EndEffectorGlobal = FreeCAD.Vector(0, 0, 0)
+
+        obj.addProperty("App::PropertyPythonObject", "sympyVariables", "Robot", "List of sympy variables").sympyVariables = []
+        obj.addProperty("App::PropertyPythonObject", "DHTransformations", "Robot", "List of sympy transforms").DHTransformations = []
+        obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
 
         obj.addProperty("App::PropertyLink", "Base", "Robot", "Base of the robot").Base = None
 
@@ -45,6 +51,8 @@ class RobotObject:
         if prop == "Angles":
             if obj.BodyJointCoordinateSystems:
                 updateAngles()
+                #updateGlobalEndEffector()
+                
 
 
 
@@ -191,8 +199,22 @@ def connectRobotToAssembly():
     robot.PrevBodies = [link.Body for link in link_prev_arr]
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
+    robot.sympyVariables = [sp.symbols(f'theta_{i}') for i in range(len(robot.Constraints))]
+
     for constraint in robot.Constraints: # Deactivate the constraints so the assembly does not solve the joints
         constraint.Activated = False
 
 
 
+
+
+
+def updateGlobalEndEffector():
+    robot = get_robot()
+    if robot.DHTransformations:
+        T_last = robot.DHTransformations[-1].subs({var : sp.rad(angle) for var, angle in zip(robot.sympyVariables, robot.Angles)})
+        robot.EndEffectorGlobal = (float(T_last[0, 3]), float(T_last[1, 3]), float(T_last[2, 3]))
+
+        #body = robot.Bodies[-1]
+        #end = body.Placement.Matrix * FreeCAD.Vector(robot.EndEffector)
+        #robot.EndEffectorGlobal = end

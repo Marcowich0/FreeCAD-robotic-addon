@@ -21,7 +21,7 @@ class testCommand:
 
     def Activated(self):
         """Called when the command is activated (e.g., button pressed)."""
-        solve_ik_nsolve_system(720, 120, 0)
+        defineSympyJacobian()
 
     def IsActive(self):
         """Determines if the command is active."""
@@ -271,52 +271,49 @@ def defineEndEffector():
 
 import sympy as sp
 
-def defineSympyDHTranformationMatrices():
+def defineSympyTranformationMatrices():
     robot = get_robot()
-    DH_perameters = findDHPerameters()
+    theta = robot.sympyVariables
 
-    T_arr = [sp.Matrix([[1, 0, 0, 0],
-                        [0, 1, 0, 0],
-                        [0, 0, 1, 0],
-                        [0, 0, 0, 1]])]
-    for theta, d, a, alpha in DH_perameters:
-        DH_mat = sp.Matrix([[sp.cos(theta), -sp.sin(theta)*sp.cos(alpha), sp.sin(theta)*sp.sin(alpha), a*sp.cos(theta)],
-                            [sp.sin(theta), sp.cos(theta)*sp.cos(alpha), -sp.cos(theta)*sp.sin(alpha), a*sp.sin(theta)],
-                            [0, sp.sin(alpha), sp.cos(alpha), d],
-                            [0, 0, 0, 1]])
-        T_arr.append(T_arr[-1]*DH_mat)
+    T_arr = [sp.Matrix(mat_to_numpy(robot.CoordinateSystems[0].Placement.Matrix))]
 
-    end = sp.Matrix([[0,0,0,robot.EndEffector.x],
-                    [0,0,0,robot.EndEffector.y],
-                    [0,0,0,robot.EndEffector.z],
-                    [0,0,0,1]])
-    T_arr.append(T_arr[-1]*end)
-    print(T_arr[-1]*sp.Matrix([0,0,0,1]))
-    T_arr.pop(0)
-    T_arr = [sp.simplify(T) for T in T_arr]
-    return T_arr
+    for i, (lcs_ref, lcs_dh) in enumerate(zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:])):
+        print(f"Creating transformation matrix for joint {i}, {lcs_ref.Name} -> {lcs_dh.Name}")
+        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
+        ol_A_dh = mat_to_numpy(lcs_dh.Placement.Matrix)
+        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
+
+        rot = sp.Matrix([[sp.cos(theta[i]), -sp.sin(theta[i]), 0, 0],
+                         [sp.sin(theta[i]), sp.cos(theta[i]), 0, 0],
+                         [0, 0, 1, 0],
+                         [0, 0, 0, 1]])
+        
+        T_arr.append(T_arr[-1] * rot * sp.Matrix(ref_A_dh)) 
+
+    T_end = sp.Matrix([[0,0,0,robot.EndEffector.x],
+                       [0,0,0,robot.EndEffector.y],
+                       [0,0,0,robot.EndEffector.z],
+                       [0,0,0,1]])
+    T_arr.append(T_arr[-1] * T_end)
+    robot.DHTransformations = T_arr
 
 
-
-from sympy import nsolve
-
-def solve_ik_nsolve_system(x_des, y_des, z_des):
+def defineSympyJacobian():
     robot = get_robot()
-    T_arr = defineSympyDHTranformationMatrices()
-    theta_syms = [sp.symbols(f'theta_{i}') for i in range(len(robot.Constraints))]
-    p_end = (T_arr[-1]*sp.Matrix([0, 0, 0, 1]))
-
-    eqs = [
-        p_end[0] - x_des,
-        p_end[1] - y_des,
-        p_end[2] - z_des
-    ]
-    # 'init_guess' must be a tuple of initial guesses matching 'theta_syms'
-    sol = nsolve(eqs, theta_syms, robot.Angles)
-    # nsolve_system returns (sol_theta0, sol_theta1, ...)
-    print({theta_syms[i]: float(sol[i]) for i in range(len(theta_syms))})
-    return {theta_syms[i]: float(sol[i]) for i in range(len(theta_syms))}
-
+    if not robot.DHTransformations:
+        defineSympyTranformationMatrices()
+    
+    T_arr = robot.DHTransformations
+    Jac = []
+    On = T_arr[-1][0:3, 3]
+    for i in range(1, len(T_arr)-1):
+        Zi = T_arr[i-1][0:3, 2]
+        Oi = T_arr[i-1][0:3, 3]
+        Jv = Zi.cross(On - Oi)
+        Jw = Zi
+        Jac.append([*Jv, *Jw])
+    robot.Jacobian = sp.Matrix(Jac).T
+    return sp.Matrix(Jac).T
 
 
 
@@ -345,6 +342,7 @@ class FindDHParametersCommand:
 FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
 
 
+#TODO
 def findDHPerameters():
     import sympy as sp
     robot = get_robot()
@@ -354,14 +352,19 @@ def findDHPerameters():
     DH_transformations = []
     DH_parameters = []
 
-    for body, lcs_ref in zip(robot.Bodies, robot.BodyJointCoordinateSystems):
-        o_A_ol = body.Placement.Matrix 
-        ol_A_dh = lcs_ref.Placement.Matrix
-        o_A_dh = o_A_ol * ol_A_dh
-        DH_transformations.append(np.array(o_A_dh.A).reshape(4, 4))
-    
+    all_ref = [robot.PrevBodies[0].Placement.Matrix, *[lcs.Placement.Matrix for lcs in robot.BodyJointCoordinateSystems[:len(robot.BodyJointCoordinateSystems)-1]]]
+    all_dh = [lcs.Placement.Matrix for lcs in robot.CoordinateSystems]
 
-    theta = [sp.symbols(f'theta_{i}') for i in range(len(robot.Constraints))]
+    for lcs_dh, lcs_ref in zip(all_dh, all_ref):
+        ol_A_ref = mat_to_numpy(lcs_ref)
+        ol_A_dh = mat_to_numpy(lcs_dh)
+        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
+
+        print(ref_A_dh[0:3, 3])
+        DH_transformations.append(ref_A_dh)
+
+
+    theta = robot.sympyVariables
     for i, DH in enumerate(DH_transformations):
         DH_sympy = sp.Matrix(DH)
         
@@ -373,6 +376,6 @@ def findDHPerameters():
         alpha_val = tmp1 if tmp1 == tmp2 else -tmp1
         alpha = round(alpha_val/np.pi*180, 3)
         
-        DH_parameters.append([theta[i], d, a, alpha])
+        DH_parameters.append([theta[i] + theta_offsets[i], d, a, alpha])
     robot.Angles = old_angles
     return DH_parameters

@@ -4,7 +4,6 @@ import os
 import re
 from main_utils import get_robot, updateGlobalEndEffector
 
-from inverse_kinematics import solve_ik
 
 
 class testCommand:
@@ -23,7 +22,7 @@ class testCommand:
 
     def Activated(self):
         """Called when the command is activated (e.g., button pressed)."""
-        solve_ik(FreeCAD.Vector(0, 800, 800))
+        defineTranformationMatrices()
 
     def IsActive(self):
         """Determines if the command is active."""
@@ -253,8 +252,6 @@ def defineEndEffector():
 
     if sel:
         sobj = sel[0]
-        obj = sobj.Object
-        sub_names = sobj.SubElementNames
         sub_objects = sobj.SubObjects
         
         if sub_objects:
@@ -294,11 +291,13 @@ def defineTranformationMatrices():
         
         T_arr.append(T_arr[-1] * rot * sp.Matrix(ref_A_dh)) 
 
-    T_end = sp.Matrix([[0,0,0,robot.EndEffector.x],
+    ol_A_lc = mat_to_numpy(robot.BodyJointCoordinateSystems[-1].Placement.Matrix)
+    ol_P = np.array([[0,0,0,robot.EndEffector.x],
                        [0,0,0,robot.EndEffector.y],
                        [0,0,0,robot.EndEffector.z],
                        [0,0,0,1]])
-    T_arr.append(T_arr[-1] * T_end)
+    
+    T_arr.append(T_arr[-1] * np.linalg.inv(ol_A_lc) @ ol_P)
     robot.SympyTransformations = T_arr
     robot.NumpyTransformations = [sp.lambdify(theta, T, 'numpy') for T in T_arr]
     robot.Angles = old_angles

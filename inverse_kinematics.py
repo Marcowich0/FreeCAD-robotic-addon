@@ -53,28 +53,23 @@ FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 
 
-
-
-
-
-
-# Add to positioning_functions.py
-def solve_ik(target_pos, max_iterations=100, tolerance=0.5, damping=0.1):
-
-    print (f"Attemping to solve IK for target position: {target_pos}")
+def solve_ik(target_pos, max_iterations=1000, tolerance=0.05, damping=0.1, orientation_weight=1.0):
     """
-    Solves inverse kinematics to reach target position with minimal joint movement.
+    Solves inverse kinematics to reach target position and optionally align with target direction.
     
     Args:
         target_pos (FreeCAD.Vector): Target position in global coordinates
-        max_iterations (int): Maximum number of iterations (default: 50)
-        tolerance (float): Position error tolerance in mm (default: 1.0)
+        target_dir (FreeCAD.Vector, optional): Target direction vector (z-axis alignment). Defaults to None.
+        max_iterations (int): Maximum number of iterations (default: 1000)
+        tolerance (float): Combined position/orientation error tolerance (default: 0.5)
         damping (float): Damping factor for singularity handling (default: 0.1)
+        orientation_weight (float): Weight for orientation error relative to position (default: 1.0)
         
     Returns:
         bool: True if converged, False if failed
     """
     robot = get_robot()
+    target_dir = robot.EndEffectorOrientation
     if not robot:
         FreeCAD.Console.PrintError("No robot found\n")
         return False
@@ -84,28 +79,64 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.5, damping=0.1):
     
     for iteration in range(max_iterations):
         current_pos = robot.EndEffectorGlobal
-        delta_x = np.array([
-            target_pos.x - current_pos.x,
-            target_pos.y - current_pos.y,
-            target_pos.z - current_pos.z
-        ])
-        
-        error = np.linalg.norm(delta_x)
-        if error < tolerance:
-            FreeCAD.Console.PrintMessage(f"IK converged after {iteration+1} iterations\n")
+        delta_pos = target_pos - current_pos
+        delta_x_position = np.array([delta_pos.x, delta_pos.y, delta_pos.z])
+
+        # Initialize error components
+        position_error = np.linalg.norm(delta_x_position)
+        orientation_error = 0.0
+
+        # Calculate orientation components if target_dir is specified
+        if target_dir is not None:
+            # Get current end effector orientation (z-axis)
+            o_A_b = robot.Bodies[-1].Placement.Rotation
+            b_A_lc = robot.BodyJointCoordinateSystems[-1].Placement.Rotation
+            current_rot = o_A_b.multiply(b_A_lc)
+            current_dir = current_rot.multVec(FreeCAD.Vector(0, 0, 1))
+            current_dir.normalize()  # Normalize in-place
+            
+            # Create normalized copy of target direction
+            target_dir_norm = FreeCAD.Vector(target_dir)
+            target_dir_norm.normalize()
+            
+            # Calculate orientation error using cross product
+            orientation_error_vec = current_dir.cross(target_dir_norm)
+            delta_x_orientation = orientation_weight * np.array([
+                orientation_error_vec.x,
+                orientation_error_vec.y,
+                orientation_error_vec.z
+            ])
+            
+            # Combine position and orientation errors
+            delta_x = np.concatenate([delta_x_position, delta_x_orientation])
+            orientation_error = np.linalg.norm(delta_x_orientation)
+        else:
+            delta_x = delta_x_position
+
+        # Calculate total error
+        total_error = np.linalg.norm(delta_x)
+        if total_error < tolerance:
+            FreeCAD.Console.PrintMessage(
+                f"IK converged after {iteration+1} iterations\n"
+                f"Position error: {position_error:.2f} mm"
+                + (f", Orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
+            )
             return True
 
         # Convert current angles to radians for calculations
         current_angles_rad = np.array([math.radians(a) for a in robot.Angles])
         
-        # Calculate Jacobian at current position (use only positional part)
+        # Calculate Jacobian at current position
         J_full = robot.NumpyJacobian(*current_angles_rad)
-        J_position = J_full[:3, :]  # Extract first 3 rows (positional components)
         
+        # Select appropriate Jacobian based on orientation solving
+        J = J_full if target_dir is not None else J_full[:3, :]
+
         # Damped least squares inversion
-        J_T = J_position.T
-        JJT = J_position @ J_T
-        damping_matrix = damping**2 * np.eye(3)
+        m = J.shape[0]
+        J_T = J.T
+        JJT = J @ J_T
+        damping_matrix = (damping**2) * np.eye(m)
         J_pseudo = J_T @ np.linalg.inv(JJT + damping_matrix)
         
         # Calculate angle changes
@@ -120,5 +151,10 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.5, damping=0.1):
         robot.Angles = new_angles_deg
         FreeCAD.ActiveDocument.recompute()
 
-    FreeCAD.Console.PrintWarning(f"IK failed to converge after {max_iterations} iterations. Final error: {error:.2f} mm\n")
+    FreeCAD.Console.PrintWarning(
+        f"IK failed to converge after {max_iterations} iterations\n"
+        f"Final position error: {position_error:.2f} mm"
+        + (f", orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
+    )
     return False
+

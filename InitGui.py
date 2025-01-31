@@ -4,6 +4,7 @@ import FreeCADGui
 import forward_kinematics
 import RobotObject
 import angle_sliders
+import orientation_sliders
 import inverse_kinematics
 
 import os
@@ -18,7 +19,7 @@ class Robotics (Workbench):
 
         
         self.appendToolbar("Instantiation", ["CreateRobotCommand"])
-        self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand"])
+        self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", ["FindDHParametersCommand", "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", ["ToTargetPointCommand"])
         self.appendToolbar("Test", ["testCommand"])

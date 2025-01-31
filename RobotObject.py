@@ -31,7 +31,7 @@ class RobotObject:
         obj.addProperty("App::PropertyPythonObject", "NumpyTransformations", "Robot", "List of numpy transforms").NumpyTransformations = []
         obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
         obj.addProperty("App::PropertyPythonObject", "NumpyJacobian", "Robot", "Numpy Jacobian matrix").NumpyJacobian = None
-        obj.addProperty("App::PropertyPythonObject", "EndEffectorOrientation", "Robot", "End effector orientation").EndEffectorOrientation = None
+        obj.addProperty("App::PropertyVector", "EndEffectorOrientation", "Robot", "End effector orientation").EndEffectorOrientation = FreeCAD.Vector(0, 0, 0)
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only

@@ -2,7 +2,8 @@ import FreeCAD
 import FreeCADGui
 import os
 from main_utils import get_robot
-
+import numpy as np
+import math
 
 class ToTargetPointCommand:
     """Command to solve inverse kinematics for a target position."""
@@ -70,12 +71,7 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.05, damping=0.1, orien
     """
     robot = get_robot()
     target_dir = robot.EndEffectorOrientation
-    if not robot:
-        FreeCAD.Console.PrintError("No robot found\n")
-        return False
-
-    import numpy as np
-    import math
+    target_active = abs(target_dir.Length - 1) < 1e-4
     
     for iteration in range(max_iterations):
         current_pos = robot.EndEffectorGlobal
@@ -87,20 +83,17 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.05, damping=0.1, orien
         orientation_error = 0.0
 
         # Calculate orientation components if target_dir is specified
-        if target_dir is not None:
+        if target_active:
             # Get current end effector orientation (z-axis)
             o_A_b = robot.Bodies[-1].Placement.Rotation
             b_A_lc = robot.BodyJointCoordinateSystems[-1].Placement.Rotation
             current_rot = o_A_b.multiply(b_A_lc)
             current_dir = current_rot.multVec(FreeCAD.Vector(0, 0, 1))
             current_dir.normalize()  # Normalize in-place
-            
-            # Create normalized copy of target direction
-            target_dir_norm = FreeCAD.Vector(target_dir)
-            target_dir_norm.normalize()
+
             
             # Calculate orientation error using cross product
-            orientation_error_vec = current_dir.cross(target_dir_norm)
+            orientation_error_vec = current_dir.cross(target_dir)
             delta_x_orientation = orientation_weight * np.array([
                 orientation_error_vec.x,
                 orientation_error_vec.y,
@@ -130,7 +123,7 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.05, damping=0.1, orien
         J_full = robot.NumpyJacobian(*current_angles_rad)
         
         # Select appropriate Jacobian based on orientation solving
-        J = J_full if target_dir is not None else J_full[:3, :]
+        J = J_full if target_active else J_full[:3, :]
 
         # Damped least squares inversion
         m = J.shape[0]

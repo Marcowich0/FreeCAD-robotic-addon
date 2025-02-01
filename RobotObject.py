@@ -93,6 +93,35 @@ class RobotViewProvider:
         return True
     
 
+
+
+
+
+# ----------------- Adding the GUI Button to create robot -----------------
+
+class CreateRobotCommand:
+    """A FreeCAD command to create a Robot object."""
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'robotArm2.svg'),
+            'MenuText': 'Create Robot',
+            'ToolTip': 'Instantiate a new Robot'
+        }
+
+    def Activated(self):
+        """Called when the command is activated (button clicked)."""
+        initialize_robot()
+
+    def IsActive(self):
+        """Determine if the command should be active."""
+        if get_robot() is None:
+            return True
+        return False
+    
+FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())
+
+
 def initialize_robot():
     """Directly initialize the robot object in the active document."""
     doc = FreeCAD.ActiveDocument
@@ -117,29 +146,43 @@ def initialize_robot():
 
 
 
-# ----------------- Adding the GUI Button -----------------
 
-class CreateRobotCommand:
+# ----------------- Adding the GUI Button to remove robot -----------------
+
+class RemoveRobotCommand:
     """A FreeCAD command to create a Robot object."""
 
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'robotArm2.svg'),
-            'MenuText': 'Create Robot',
-            'ToolTip': 'Instantiate a new Robot'
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'trash.svg'),
+            'MenuText': 'Remove Robot',
+            'ToolTip': 'Remove all robot elements'
         }
 
     def Activated(self):
         """Called when the command is activated (button clicked)."""
-        initialize_robot()
+        remove_robot()
 
     def IsActive(self):
         """Determine if the command should be active."""
         if get_robot() is None:
-            return True
-        return False
+            return False
+        return True
     
-FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())
+FreeCADGui.addCommand('RemoveRobotCommand', RemoveRobotCommand())
+
+def remove_robot():
+    """Remove the robot object from the active document."""
+    doc = FreeCAD.ActiveDocument
+    robot = get_robot()
+    for lc in robot.CoordinateSystems:
+        doc.removeObject(lc.Name)
+    for lc in robot.BodyJointCoordinateSystems:
+        doc.removeObject(lc.Name)
+    doc.removeObject(robot.Name)
+    doc.recompute()
+
+
 
 
 

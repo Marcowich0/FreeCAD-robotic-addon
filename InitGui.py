@@ -3,8 +3,9 @@ import FreeCADGui
 
 import forward_kinematics
 import RobotObject
-import angle_sliders
-import orientation_sliders
+import qt_angle_sliders
+import qt_orientation_sliders
+import qt_move_end_effector
 import inverse_kinematics
 
 import os
@@ -18,10 +19,10 @@ class Robotics (Workbench):
         self.__class__.Icon = os.path.join(FreeCAD.getHomePath(), 'Mod', 'FreeCAD-robotic-addon', 'Resources', 'icons', 'robotArm.svg')
 
         
-        self.appendToolbar("Instantiation", ["CreateRobotCommand"])
+        self.appendToolbar("Instantiation", ["CreateRobotCommand", "RemoveRobotCommand"])
         self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", ["FindDHParametersCommand", "RobotAnglesCommand"])
-        self.appendToolbar("Inverse Kinematics", ["ToTargetPointCommand"])
+        self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
         self.appendToolbar("Test", ["testCommand"])
 
 

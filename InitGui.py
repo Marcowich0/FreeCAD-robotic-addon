@@ -29,7 +29,7 @@ class Robotics (Workbench):
         self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", ["FindDHParametersCommand", "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
-        self.appendToolbar("Test", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "AnimateTrajectoryCommand"])
+        self.appendToolbar("Test", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand"])
 
 
         #self.appendMenu("My New Menu", self.list)

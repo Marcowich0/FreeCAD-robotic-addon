@@ -3,6 +3,16 @@ import FreeCAD
 import FreeCADGui
 import Part
 import time
+import os
+
+# Add these imports at the top
+from PySide import QtCore
+import threading
+
+animation_state = "stopped"  # Possible states: "playing", "paused", "stopped"
+current_animation_index = 0
+animation_timer = None
+
 
 from main_utils import currentSelectionType, get_robot
 from inverse_kinematics import solve_ik
@@ -17,7 +27,7 @@ class Trajectory:
         obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body")
         obj.addProperty("App::PropertyLinkSub", "Edge", "Trajectory", "Link to an Edge")
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
-        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 1
+        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 10
         obj.addProperty("App::PropertyPythonObject", "Angles", "Trajectory", "List of angles").Angles = []
     
     def execute(self, obj):
@@ -61,7 +71,7 @@ class ViewProviderTrajectory:
 
 class AddTrajectoryCommand:
     def GetResources(self):
-        return {'Pixmap': 'path/to/icon', 
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'trajectory.svg'), 
                 'MenuText': 'Add Trajectory', 
                 'ToolTip': 'Add a trajectory object'}
 
@@ -86,9 +96,9 @@ FreeCADGui.addCommand('AddTrajectoryCommand', AddTrajectoryCommand())
 
 class SolveTrajectoryCommand:
     def GetResources(self):
-        return {'Pixmap': 'path/to/icon', 
-                'MenuText': 'Add Trajectory', 
-                'ToolTip': 'Add a trajectory object'}
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'solve.svg'), 
+                'MenuText': 'Solve Trajectory', 
+                'ToolTip': 'Solve inverse kinematics for chosen line'}
 
     def Activated(self):
         robot = get_robot()
@@ -108,26 +118,109 @@ FreeCADGui.addCommand('SolveTrajectoryCommand', SolveTrajectoryCommand())
 
 
 
-class AnimateTrajectoryCommand:
+class PlayTrajectoryCommand:
     def GetResources(self):
-        return {'Pixmap': 'path/to/icon', 
-                'MenuText': 'Add Trajectory', 
-                'ToolTip': 'Add a trajectory object'}
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'play.svg'),
+                'MenuText': 'Play Trajectory',
+                'ToolTip': 'Start/resume trajectory animation'}
 
     def Activated(self):
-        robot = get_robot()
+        global animation_state, current_animation_index, animation_timer
+        
+        if animation_state == "playing":
+            return
+
         sel = FreeCADGui.Selection.getSelection()[0]
-        for angles in sel.Angles:
-            delay = 1 / sel.Velocity
+        if not sel.Angles:
+            print("No angles calculated!")
+            return
+
+        # Initialize timer if not exists
+        if not animation_timer:
+            animation_timer = QtCore.QTimer()
+            animation_timer.timeout.connect(self.update_animation)
+
+        # Start or resume animation
+        if animation_state == "stopped":
+            current_animation_index = 0
+            self.update_robot_position(sel.Angles[0])
+
+        animation_state = "playing"
+        delay = int(1000 / sel.Velocity)
+        animation_timer.start(delay)
+
+    def update_animation(self):
+        global animation_state, current_animation_index
+        
+        sel = FreeCADGui.Selection.getSelection()[0]
+        if not sel or current_animation_index >= len(sel.Angles):
+            self.stop_animation()
+            return
+
+        self.update_robot_position(sel.Angles[current_animation_index])
+        current_animation_index += 1
+
+    def update_robot_position(self, angles):
+        robot = get_robot()
+        if robot:
             robot.Angles = angles
             FreeCADGui.updateGui()
-            time.sleep(delay)
+
+    def stop_animation(self):
+        global animation_state, animation_timer
+        if animation_timer:
+            animation_timer.stop()
+        animation_state = "stopped"
 
     def IsActive(self):
-        sel = FreeCADGui.Selection.getSelection()[0]
-        return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory')
+        sel = FreeCADGui.Selection.getSelection()[0] if FreeCADGui.Selection.getSelection() else None
+        return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory' 
+                   and animation_state != "playing" and sel.Angles)
 
-FreeCADGui.addCommand('AnimateTrajectoryCommand', AnimateTrajectoryCommand())
+class PauseTrajectoryCommand:
+    def GetResources(self):
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'pause.svg'),
+                'MenuText': 'Pause Trajectory',
+                'ToolTip': 'Pause trajectory animation'}
+
+    def Activated(self):
+        global animation_state, animation_timer
+        if animation_state == "playing":
+            animation_state = "paused"
+            if animation_timer:
+                animation_timer.stop()
+
+    def IsActive(self):
+        return animation_state == "playing"
+
+class StopTrajectoryCommand:
+    def GetResources(self):
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'stop.svg'),
+                'MenuText': 'Stop Trajectory',
+                'ToolTip': 'Stop and reset trajectory animation'}
+
+    def Activated(self):
+        global animation_state, current_animation_index
+        animation_state = "stopped"
+        current_animation_index = 0
+        
+        # Reset to initial position
+        sel = FreeCADGui.Selection.getSelection()[0]
+        if sel.Angles:
+            get_robot().Angles = sel.Angles[0]
+            FreeCADGui.updateGui()
+        
+        if animation_timer:
+            animation_timer.stop()
+
+    def IsActive(self):
+        return animation_state in ["playing", "paused"]
+
+# Register commands
+FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())
+FreeCADGui.addCommand('PauseTrajectoryCommand', PauseTrajectoryCommand())
+FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
+
 
 
 

@@ -1,12 +1,18 @@
 import FreeCAD
 import FreeCADGui
 
-import forward_kinematics
+
 import RobotObject
+import TrejectoryObject
+
 import qt_angle_sliders
 import qt_orientation_sliders
 import qt_move_end_effector
+
+import forward_kinematics
 import inverse_kinematics
+
+
 
 import os
 
@@ -23,7 +29,7 @@ class Robotics (Workbench):
         self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", ["FindDHParametersCommand", "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
-        self.appendToolbar("Test", ["testCommand"])
+        self.appendToolbar("Test", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "AnimateTrajectoryCommand"])
 
 
         #self.appendMenu("My New Menu", self.list)

@@ -43,3 +43,23 @@ def updateGlobalEndEffector():
     if robot.NumpyTransformations:
         T_last = robot.NumpyTransformations[-1](*[float(angle/180*np.pi) for angle in robot.Angles])
         robot.EndEffectorGlobal = (float(T_last[0, 3]), float(T_last[1, 3]), float(T_last[2, 3]))
+
+
+
+
+def currentSelectionType():
+    selection = FreeCADGui.Selection.getSelectionEx()
+    if selection and selection[0].SubElementNames:
+        sel = selection[0]
+        subelement = sel.SubElementNames[0]
+        if subelement.startswith('Edge'):
+            return 'Edge'
+        elif subelement.startswith('Face'):
+            return 'Face'
+        elif subelement.startswith('Vertex'):
+            return 'Vertex'
+        
+    try:
+        return sel.Type
+    except:
+        return None

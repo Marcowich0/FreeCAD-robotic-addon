@@ -348,7 +348,6 @@ FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
 
 #TODO
 def findDHPerameters():
-    import sympy as sp
     robot = get_robot()
     old_angles = robot.Angles
     robot.Angles = [0 for _ in robot.Angles]
@@ -356,30 +355,56 @@ def findDHPerameters():
     DH_transformations = []
     DH_parameters = []
 
-    all_ref = [robot.PrevBodies[0].Placement.Matrix, *[lcs.Placement.Matrix for lcs in robot.BodyJointCoordinateSystems[:len(robot.BodyJointCoordinateSystems)-1]]]
-    all_dh = [lcs.Placement.Matrix for lcs in robot.CoordinateSystems]
+    o_A_last = np.array([[1,0,0,0],
+                          [0,1,0,0],
+                          [0,0,1,0],
+                          [0,0,0,1]])
 
-    for lcs_dh, lcs_ref in zip(all_dh, all_ref):
-        ol_A_ref = mat_to_numpy(lcs_ref)
-        ol_A_dh = mat_to_numpy(lcs_dh)
-        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
+    for lcs_ref, body in zip(robot.BodyJointCoordinateSystems, robot.Bodies):
+        print(f"Finding DH parameters for {body.Name}")
+        o_A_ol = mat_to_numpy(body.Placement.Matrix)
+        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
+        o_A_ref = o_A_ol @ ol_A_ref
 
-        print(ref_A_dh[0:3, 3])
-        DH_transformations.append(ref_A_dh)
+        old_z = o_A_last[0:3, 2]
+        new_z = o_A_ref[0:3, 2]
+        if np.linalg.norm(np.cross(old_z, new_z)) < 1e-6:
+            print("Parallel z-axes")
+            vec_diff = o_A_ref[0:3, 3] - o_A_last[0:3, 3]
+            proj = vec_diff @ old_z * old_z
+            d = np.linalg.norm(proj)
+            a = np.linalg.norm(vec_diff - proj)
+            alpha = 0
+        else:
+            print("Non-parallel z-axes")
+            p1 = sp.Matrix(o_A_last[0:3, 3])
+            d1 = sp.Matrix(o_A_last[0:3, 2])
+            p2 = sp.Matrix(o_A_ref[0:3, 3])
+            d2 = sp.Matrix(o_A_ref[0:3, 2])
 
+            t, s = sp.symbols('t s', real=True)
+            eq1 = sp.Eq(d1.dot(p1 - p2 + t*d1 - s*d2), 0)
+            eq2 = sp.Eq(d2.dot(p1 - p2 + t*d1 - s*d2), 0)
+            sol = sp.solve([eq1, eq2], (t, s), dict=True)
+            sol = sol[0]
+            r1 = p1 + sol[t]*d1
+            r2 = p2 + sol[s]*d2
 
-    theta = robot.sympyVariables
-    for i, DH in enumerate(DH_transformations):
-        DH_sympy = sp.Matrix(DH)
-        
-        d = round(DH_sympy[2, 3], 3)
-        a = round(DH_sympy[0, 3], 3)
+            # Convert SymPy matrices to NumPy arrays
+            r1_np = np.array(r1).astype(np.float64)
+            r2_np = np.array(r2).astype(np.float64)
 
-        tmp1 = sp.acos(DH_sympy[2, 2])
-        tmp2 = sp.asin(DH_sympy[2, 1])
-        alpha_val = tmp1 if tmp1 == tmp2 else -tmp1
-        alpha = round(alpha_val/np.pi*180, 3)
-        
-        DH_parameters.append([theta[i] + theta_offsets[i], d, a, alpha])
-    robot.Angles = old_angles
-    return DH_parameters
+            d = np.linalg.norm( np.array(sol[t]*d1).astype(np.float64) )
+            d = -d if sol[t] < 0 else d
+            a = np.linalg.norm(r1_np - r2_np) if np.linalg.norm(r1_np - r2_np) > 1e-6 else 0
+            # TODO check signs
+
+            alpha = np.arccos(old_z @ new_z)
+
+        print(f" -- d: {d}, a: {a}, alpha: {alpha}")
+
+        theta = 0
+        o_A_last = np.array([[np.cos(theta), -np.sin(theta)*np.cos(alpha), np.sin(theta)*np.sin(alpha), a*np.cos(theta)],
+                             [np.sin(theta), np.cos(theta)*np.cos(alpha), -np.cos(theta)*np.sin(alpha), a*np.sin(theta)],
+                             [0, np.sin(alpha), np.cos(alpha), d],
+                             [0, 0, 0, 1]])

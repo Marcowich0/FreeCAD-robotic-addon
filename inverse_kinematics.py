@@ -54,7 +54,7 @@ FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 
 
-def solve_ik(target_pos, max_iterations=1000, tolerance=0.05, damping=0.1, orientation_weight=1.0):
+def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orientation_weight=1.0):
     """
     Solves inverse kinematics to reach target position and optionally align with target direction.
     

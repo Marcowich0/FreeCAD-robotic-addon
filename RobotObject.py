@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from forward_kinematics import createDanevitHartenberg, updateAngles, defineTranformationMatrices, defineJacobian
+from forward_kinematics import InitilizeCoordinateSystems, updateAngles, defineTranformationMatrices, defineJacobian
 from main_utils import get_robot, updateGlobalEndEffector
 import numpy as np
 import sympy as sp
@@ -138,7 +138,7 @@ def initialize_robot():
     doc.recompute()
 
     connectRobotToAssembly()
-    createDanevitHartenberg()
+    InitilizeCoordinateSystems()
     defineTranformationMatrices()
     defineJacobian()
 

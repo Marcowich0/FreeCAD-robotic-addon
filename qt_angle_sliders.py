@@ -33,7 +33,7 @@ class RobotAnglesDialog(QtGui.QDialog):
             row_layout = QtGui.QHBoxLayout(row_widget)
             
             # 1) Joint name
-            joint_label = QtGui.QLabel(f"q{i}")
+            joint_label = QtGui.QLabel(f"q{i+1}")
             row_layout.addWidget(joint_label)
 
             # 2) Slider

@@ -77,6 +77,8 @@ def InitilizeCoordinateSystems():
 
             lcs_arr.append(lcs_dh)
 
+
+
     robot.CoordinateSystems = lcs_arr
     robot.BodyJointCoordinateSystems = BodyJointCoordinateSystems
 
@@ -99,13 +101,14 @@ def correctDHpositions():
         o_A_new = o_A_o2 @ o2_A_ref
         old_z = o_A_last[0:3, 2]
         new_z = o_A_new[0:3, 2]
+        p1 = sp.Matrix(o_A_last[0:3, 3])
+        d1 = sp.Matrix(o_A_last[0:3, 2]).normalized()
+        p2 = sp.Matrix(o_A_new[0:3, 3])
+        d2 = sp.Matrix(o_A_new[0:3, 2]).normalized()
         print(f"Old z: {old_z}, New z: {new_z}")
         if np.linalg.norm(np.cross(old_z, new_z)) > 1e-6:
             print("Non-parallel z-axes")
-            p1 = sp.Matrix(o_A_last[0:3, 3])
-            d1 = sp.Matrix(o_A_last[0:3, 2]).normalized()
-            p2 = sp.Matrix(o_A_new[0:3, 3])
-            d2 = sp.Matrix(o_A_new[0:3, 2]).normalized()
+
             print(f"p1: {p1}, d1: {d1}, p2: {p2}, d2: {d2}")
 
             t, s = sp.symbols('t s', real=True)
@@ -114,17 +117,20 @@ def correctDHpositions():
             sol = sp.solve([eq1, eq2], (t, s), dict=True)
             sol = sol[0]
             print(sol)
-            translation = np.array([[1,0,0,0],
-                                    [0,1,0,0],
-                                    [0,0,1, float(sol[s])],
-                                    [0,0,0,1]])
-            lcs_ref.Placement.Matrix = numpy_to_mat( mat_to_numpy(lcs_ref.Placement.Matrix) @ translation)
-            lcs_dh.Placement.Matrix = numpy_to_mat( mat_to_numpy(lcs_dh.Placement.Matrix) @ translation)
+            translation = float(sol[s])
             o_A_last = o_A_new
         else:
             print("Parallel z-axes")
+            translation = float(p1[2]-p2[2])
             o_A_last = o_A_new
 
+        translation_mat = np.array([[1,0,0,0],
+                                    [0,1,0,0],
+                                    [0,0,1, translation],
+                                    [0,0,0,1]])
+        lcs_ref.Placement.Matrix = numpy_to_mat( mat_to_numpy(lcs_ref.Placement.Matrix) @ translation_mat)
+        lcs_dh.Placement.Matrix = numpy_to_mat( mat_to_numpy(lcs_dh.Placement.Matrix) @ translation_mat)
+    
     for lcs_ref, lcs_dh in zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:]):
         angle_between = 1
         while angle_between>0:
@@ -392,7 +398,7 @@ class FindDHParametersCommand:
 
     def Activated(self):
         """Called when the command is activated (button clicked)."""
-        print(correctDHpositions())
+        print(findDHPeremeters())
 
     def IsActive(self):
         """Determine if the command should be active."""
@@ -402,3 +408,52 @@ FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
 
 
 
+
+def findDHPeremeters():
+    doc = FreeCAD.ActiveDocument
+    empty_body = doc.addObject('PartDesign::Body', 'DH_coordinate_systems')
+    doc.recompute()
+    robot = get_robot()
+    DH_peremeters = []
+    robot.Angles = [0 for _ in robot.Angles]
+
+    for i, (lcs_ref, lcs_dh) in enumerate(zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:])):
+        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
+        ol_A_dh = mat_to_numpy(lcs_dh.Placement.Matrix)
+        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
+        d = ref_A_dh[2, 3]
+        a = ref_A_dh[0, 3]
+        alpha = np.arccos(ref_A_dh[2,2]) if abs(np.arccos(ref_A_dh[2,2]) - np.arcsin(ref_A_dh[2,1])) < 1e-6 else -np.arccos(ref_A_dh[2,2])
+        DH_peremeters.append([f'theta_{i+1}', d, a, alpha])
+    
+    robot.DHPerameters = DH_peremeters
+    DH_peremeters = [[round(float(param), 4) if isinstance(param, float) else param for param in dh] for dh in DH_peremeters]
+    for dh in DH_peremeters:
+        print(dh)
+
+    
+    dh_coordinate_systems = []
+    for i, dh in enumerate(DH_peremeters):
+        lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'DH_{i}' ) 
+        empty_body.addObject(lcs_dh)
+        dh_coordinate_systems.append(lcs_dh)
+    robot.DHCoordinateSystems = dh_coordinate_systems
+    positionDHCoordinates()
+
+
+def positionDHCoordinates():
+    robot = get_robot()
+    last = None
+    for dh_perameters, dh_coordinate, theta in zip(robot.DHPerameters, robot.DHCoordinateSystems[1:], robot.Angles):
+        _ , d, a, alpha = dh_perameters
+        theta = np.deg2rad(theta)
+        dh_trans = np.array([[np.cos(theta), -np.sin(theta)*np.cos(alpha), np.sin(theta)*np.sin(alpha), a*np.cos(theta)],
+                             [np.sin(theta), np.cos(theta)*np.cos(alpha), -np.cos(theta)*np.sin(alpha), a*np.sin(theta)],
+                             [0, np.sin(alpha), np.cos(alpha), d],
+                             [0, 0, 0, 1]])
+        last = last @ dh_trans if last is not None else dh_trans
+        dh_coordinate.Placement.Matrix = numpy_to_mat(last)
+
+
+        
+    

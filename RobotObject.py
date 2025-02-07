@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from forward_kinematics import InitilizeCoordinateSystems, updateAngles, defineTranformationMatrices, defineJacobian
+from forward_kinematics import InitilizeCoordinateSystems, updateAngles, defineTranformationMatrices, defineJacobian, positionDHCoordinates
 from main_utils import get_robot, updateGlobalEndEffector
 import numpy as np
 import sympy as sp
@@ -33,15 +33,16 @@ class RobotObject:
         obj.addProperty("App::PropertyPythonObject", "NumpyJacobian", "Robot", "Numpy Jacobian matrix").NumpyJacobian = None
         obj.addProperty("App::PropertyVector", "EndEffectorOrientation", "Robot", "End effector orientation").EndEffectorOrientation = FreeCAD.Vector(0, 0, 0)
 
+        obj.addProperty("App::PropertyPythonObject", "DHPerameters", "Robot", "DH parameters").DHPerameters = []
+        obj.addProperty("App::PropertyPythonObject", "DHCoordinateSystems", "Robot", "DH Coordinate Systems").DHCoordinateSystems = []
+
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
-        #obj.setEditorMode("Bodies", 1)  # Make the property read-only
+        obj.setEditorMode("Bodies", 1)  # Make the property read-only
 
         obj.setEditorMode("PrevBodies", 2)  # Make the property invisible
         obj.setEditorMode("PrevEdges", 2)  # Make the property invisible
         
-        # Additional setup if needed
-        self.Type = "Robot"
 
     def execute(self, obj):
         """Define how the object behaves when updated."""
@@ -50,9 +51,10 @@ class RobotObject:
     def onChanged(self, obj, prop):
         """Handle property changes."""
         if prop == "Angles":
-            if obj.BodyJointCoordinateSystems:
+            if obj.BodyJointCoordinateSystems and obj.DHPerameters:
                 updateAngles()
                 updateGlobalEndEffector()
+                positionDHCoordinates()
 
         if prop == "EndEffector":
             if hasattr(obj, 'NumpyTransformations'):

@@ -5,6 +5,7 @@ import re
 from main_utils import get_robot, updateGlobalEndEffector, vec_to_numpy
 from main_utils import mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation
 import numpy as np
+import sympy as sp
 
 class testCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
@@ -53,7 +54,13 @@ def CreateLocalDHCoordinateSystems():
             circle = link.LinkedObject.Shape.Edges[edges[i]].Curve 
             if np.linalg.norm( np.cross(last_z, vec_to_numpy(circle.Axis)) ) < 1e-6: # If the circle axis is parallel to the last z-axis
                 z_axis = last_z
-                x_axis = last_x
+                diff = origo - ol_A_last[0:3, 3]
+                diff[2] = 0
+                if np.linalg.norm(diff) > 1e-6:
+                    x_axis = diff / np.linalg.norm(diff)
+                else:
+                    x_axis = last_x
+
             else:
                 z_axis = vec_to_numpy(circle.Axis) # Sets the axis of the coordinate system to the axis of the circle
                 x_axis = np.cross(last_z, z_axis)
@@ -217,43 +224,6 @@ def defineEndEffector():
 
 ##################################################################################################
 
-import sympy as sp
-
-"""
-def defineTranformationMatrices():
-    robot = get_robot()
-    theta = robot.sympyVariables
-    old_angles = robot.Angles
-    robot.Angles = [0 for _ in robot.Angles]
-
-    T_arr = [sp.Matrix(mat_to_numpy(robot.CoordinateSystems[0].Placement.Matrix))]
-
-    for i, (lcs_ref, lcs_dh) in enumerate(zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:])):
-        print(f"Creating transformation matrix for joint {i}, {lcs_ref.Name} -> {lcs_dh.Name}")
-        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
-        ol_A_dh = mat_to_numpy(lcs_dh.Placement.Matrix)
-        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
-
-        rot = sp.Matrix([[sp.cos(theta[i]), -sp.sin(theta[i]), 0, 0],
-                         [sp.sin(theta[i]), sp.cos(theta[i]), 0, 0],
-                         [0, 0, 1, 0],
-                         [0, 0, 0, 1]])
-        
-        T_arr.append(T_arr[-1] * rot * sp.Matrix(ref_A_dh)) 
-
-    ol_A_lc = mat_to_numpy(robot.BodyJointCoordinateSystems[-1].Placement.Matrix)
-    ol_P = np.array([[0,0,0,robot.EndEffector.x],
-                       [0,0,0,robot.EndEffector.y],
-                       [0,0,0,robot.EndEffector.z],
-                       [0,0,0,1]])
-    
-    T_arr.append(T_arr[-1] * np.linalg.inv(ol_A_lc) @ ol_P)
-    robot.SympyTransformations = T_arr
-    robot.NumpyTransformations = [sp.lambdify(theta, T, 'numpy') for T in T_arr]
-    robot.Angles = old_angles
-    updateGlobalEndEffector()
-"""
-
 def updateJacobian():
     robot = get_robot()
     T_arr = robot.DHTransformations
@@ -278,7 +248,6 @@ def updateJacobian():
 def findDHPeremeters():
     robot = get_robot()
     DH_peremeters = []
-    #robot.Angles = [0 for _ in robot.Angles]
 
     last_lcs = robot.DHLocalCoordinateSystems[:len(robot.Links)-1]
     last_body = robot.Links[:len(robot.Links)-1]

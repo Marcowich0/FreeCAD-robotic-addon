@@ -20,16 +20,9 @@ class RobotObject:
         obj.addProperty("App::PropertyIntegerList", "PrevEdges", "Robot", "List of previous edges").PrevEdges = []
         
         obj.addProperty("App::PropertyFloatList", "Angles", "Robot", "List of angles").Angles = []
-
-        obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector of the robot").EndEffector = FreeCAD.Vector(0, 0, 0)
-        obj.addProperty("App::PropertyVector", "EndEffectorGlobal", "Robot", "End effector of the robot in global coordinates").EndEffectorGlobal = FreeCAD.Vector(0, 0, 0)
-
-        obj.addProperty("App::PropertyPythonObject", "sympyVariables", "Robot", "List of sympy variables").sympyVariables = []
-        obj.addProperty("App::PropertyPythonObject", "SympyTransformations", "Robot", "List of sympy transforms").SympyTransformations = []
-        obj.addProperty("App::PropertyPythonObject", "NumpyTransformations", "Robot", "List of numpy transforms").NumpyTransformations = []
         
         obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
-        obj.addProperty("App::PropertyPythonObject", "NumpyJacobian", "Robot", "Numpy Jacobian matrix").NumpyJacobian = None
+        obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector position").EndEffector = FreeCAD.Vector(0, 0, 0)
         obj.addProperty("App::PropertyVector", "EndEffectorOrientation", "Robot", "End effector orientation").EndEffectorOrientation = FreeCAD.Vector(0, 0, 0)
 
         obj.addProperty("App::PropertyLinkList", "Links", "Robot", "List of links").Links = []
@@ -177,10 +170,11 @@ def remove_robot():
     """Remove the robot object from the active document."""
     doc = FreeCAD.ActiveDocument
     robot = get_robot()
-    for lc in robot.CoordinateSystems:
-        doc.removeObject(lc.Name)
-    for lc in robot.BodyJointCoordinateSystems:
-        doc.removeObject(lc.Name)
+    for lcs in robot.DHLocalCoordinateSystems:
+        doc.removeObject(lcs.Name)
+    for cs in robot.DHCoordinateSystems:
+        doc.removeObject(cs.Name)
+    doc.removeObject("DH_coordinate_systems")
     doc.removeObject(robot.Name)
     doc.recompute()
 
@@ -253,7 +247,6 @@ def connectRobotToAssembly():
     robot.PrevBodies = [link.Body for link in link_prev_arr]
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
-    robot.sympyVariables = [sp.symbols(f'theta_{i}') for i in range(len(robot.Constraints))]
 
     for constraint in robot.Constraints: # Deactivate the constraints so the assembly does not solve the joints
         constraint.Activated = False

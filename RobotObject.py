@@ -2,8 +2,8 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from forward_kinematics import CreateLocalDHCoordinateSystems, positionBodies, updateJacobian, positionDHCoordinateSystems, updateDHTransformations
-from main_utils import get_robot, updateGlobalEndEffector
+from forward_kinematics import InitializeCoordinateSystems, positionBodies, updateJacobian, positionDHCoordinateSystems, updateDHTransformations
+from main_utils import get_robot
 import numpy as np
 import sympy as sp
 
@@ -20,8 +20,8 @@ class RobotObject:
         obj.addProperty("App::PropertyIntegerList", "PrevEdges", "Robot", "List of previous edges").PrevEdges = []
         
         obj.addProperty("App::PropertyFloatList", "Angles", "Robot", "List of angles").Angles = []
-        
-        obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
+        obj.addProperty("App::PropertyFloatList", "AngleOffsets", "Robot", "List of angles offsets").AngleOffsets = []
+
         obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector position").EndEffector = FreeCAD.Vector(0, 0, 0)
         obj.addProperty("App::PropertyVector", "EndEffectorOrientation", "Robot", "End effector orientation").EndEffectorOrientation = FreeCAD.Vector(0, 0, 0)
 
@@ -30,6 +30,7 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "DHLocalCoordinateSystems", "Robot", "DH Local Coordinate Systems").DHLocalCoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "DHCoordinateSystems", "Robot", "DH Coordinate Systems").DHCoordinateSystems = []
         obj.addProperty("App::PropertyPythonObject", "DHTransformations", "Robot", "List of numpy transforms").DHTransformations = []
+        obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
@@ -51,9 +52,6 @@ class RobotObject:
                 positionDHCoordinateSystems()
                 positionBodies()
                 updateJacobian()
-                
-
-
             
                 
 
@@ -134,8 +132,7 @@ def initialize_robot():
     doc.recompute()
 
     connectRobotToAssembly()
-    CreateLocalDHCoordinateSystems()
-    updateJacobian()
+    InitializeCoordinateSystems()
 
     return robot_obj
 
@@ -244,6 +241,7 @@ def connectRobotToAssembly():
     robot.Bodies = [link.Body for link in link_arr]
     robot.Edges = [link.Edge for link in link_arr]
     robot.Angles = [0 for _ in link_arr]
+    robot.AngleOffsets = [0 for _ in link_arr]
     robot.PrevBodies = [link.Body for link in link_prev_arr]
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 

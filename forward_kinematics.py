@@ -74,28 +74,23 @@ def CreateLocalDHCoordinateSystems():
             z_axis = ol_A_last[0:3, 2]
 
 
-        old_z = last_z
-        new_z = z_axis
+
+        # Translate the coordinate system to the correct position along the x-axis
         p1 = sp.Matrix(ol_A_last[0:3, 3])
         d1 = sp.Matrix(ol_A_last[0:3, 2]).normalized()
         p2 = sp.Matrix(origo)
         d2 = sp.Matrix(z_axis).normalized()
         
-        
-        if np.linalg.norm(np.cross(old_z, new_z)) > 1e-6:
+        if np.linalg.norm(np.cross(last_z, z_axis)) > 1e-6:
             print("Non-parallel z-axes")
             t, s = sp.symbols('t s', real=True)
             eq1 = sp.Eq(d1.dot(p1 - p2 + t*d1 - s*d2), 0)
             eq2 = sp.Eq(d2.dot(p1 - p2 + t*d1 - s*d2), 0)
-            sol = sp.solve([eq1, eq2], (t, s), dict=True)
-            sol = sol[0]
-            print(sol)
+            sol = sp.solve([eq1, eq2], (t, s), dict=True)[0]
             translation = float(sol[s])
         else:
             print("Parallel z-axes")
             translation = float(p1[2]-p2[2])
-        print(f"link: {link.Name}")
-        #print(f"p1: {p1}, d1: {d1}, p2: {p2}, d2: {d2}")
 
         translation_mat = np.array([[1,0,0,0],
                                     [0,1,0,0],
@@ -111,7 +106,7 @@ def CreateLocalDHCoordinateSystems():
         lcs.Placement.Matrix = numpy_to_mat(ol_A_dh)
 
 
-        # Rotate body to allight the x-axes
+        # Rotate body to allign the x-axis of the DH coordinate system with the x-axis of the body
         last_x = ol_A_last[0:3, 0]
         current_x = ol_A_dh[0:3, 0]
         cos_angle = np.dot(last_x, current_x) / (np.linalg.norm(last_x) * np.linalg.norm(current_x))
@@ -120,9 +115,6 @@ def CreateLocalDHCoordinateSystems():
         if np.dot(np.cross(last_x, current_x), last_z) < 0:
             angle = -angle
         angle_between = angle
-        print(f"Angle between x-axes: {angle_between}")
-        print(f"Axis of rotation: {last[0:3, 2]}")
-        print(f"point of rotation: {last[0:3, 3]}")
 
         for link2 in robot.Links[i:]:
             o_A_o2 = mat_to_numpy(link2.Placement.Matrix)
@@ -134,6 +126,9 @@ def CreateLocalDHCoordinateSystems():
 
     robot.DHLocalCoordinateSystems = local_dh_coordinate_systems
 
+
+def InitializeCoordinateSystems():
+    CreateLocalDHCoordinateSystems()
     findDHPeremeters()
     createDHCoordinateSystems()
     updateDHTransformations()
@@ -146,10 +141,10 @@ def positionBodies():
     robot = get_robot()
     robot.Angles = [(angle + 180) % 360 - 180 for angle in robot.Angles]
 
-    for theory_dh, freecad_dh, body in zip(robot.DHCoordinateSystems[1:], robot.DHLocalCoordinateSystems[1:], robot.Bodies):
+    for theory_dh, freecad_dh, link in zip(robot.DHCoordinateSystems, robot.DHLocalCoordinateSystems, robot.Links):
         o_A_theory = mat_to_numpy(theory_dh.Placement.Matrix)
         ol_A_freecad = mat_to_numpy(freecad_dh.Placement.Matrix)
-        body.Placement.Matrix = numpy_to_mat(o_A_theory @ np.linalg.inv(ol_A_freecad))
+        link.Placement.Matrix = numpy_to_mat(o_A_theory @ np.linalg.inv(ol_A_freecad))
         
 
 
@@ -174,8 +169,6 @@ class defineEndEffectorCommand:
         defineEndEffector()
 
     def IsActive(self):        
-        sel = FreeCADGui.Selection.getSelection()
-
         sel = FreeCADGui.Selection.getSelectionEx()
         if sel:
             sobj = sel[0]
@@ -227,8 +220,6 @@ def defineEndEffector():
 def updateJacobian():
     robot = get_robot()
     T_arr = robot.DHTransformations
-    for T in T_arr:
-        print(T)
     Jac = []
     On = T_arr[-1][0:3, 3]
     for i in range(1, len(T_arr)):
@@ -238,7 +229,6 @@ def updateJacobian():
         Jw = Zi
         Jac.append([*Jv, *Jw])
     robot.Jacobian = np.array(Jac).T
-    print(np.shape(robot.Jacobian))
 
 
 
@@ -260,6 +250,7 @@ def findDHPeremeters():
         o_A_current = mat_to_numpy(current_body.Placement.Matrix)
         current_A_dh2 = mat_to_numpy(current_lcs.Placement.Matrix)
         dh1_A_dh2 = np.linalg.inv(last_A_dh1) @ np.linalg.inv(o_A_last) @ o_A_current @ current_A_dh2
+        dh1_A_dh2 = np.round(dh1_A_dh2, 10)
         
         d = dh1_A_dh2[2, 3]
         a = dh1_A_dh2[0, 3]
@@ -299,9 +290,10 @@ def updateDHTransformations():
         trans.append(last)
     robot.DHTransformations = trans
 
+
 def positionDHCoordinateSystems():
     robot = get_robot()
-    for transformation, dh_coordinate in zip(robot.DHTransformations, robot.DHCoordinateSystems):
+    for transformation, dh_coordinate in zip(robot.DHTransformations[1:], robot.DHCoordinateSystems[1:]):
         dh_coordinate.Placement.Matrix = numpy_to_mat(transformation)
 
 

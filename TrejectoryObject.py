@@ -27,7 +27,7 @@ class Trajectory:
         obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body")
         obj.addProperty("App::PropertyLinkSub", "Edge", "Trajectory", "Link to an Edge")
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
-        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 10
+        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 100
         obj.addProperty("App::PropertyPythonObject", "Angles", "Trajectory", "List of angles").Angles = []
     
     def execute(self, obj):

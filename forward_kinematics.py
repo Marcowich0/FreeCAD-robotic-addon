@@ -2,9 +2,9 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from main_utils import get_robot, updateGlobalEndEffector
-
-
+from main_utils import get_robot, updateGlobalEndEffector, vec_to_numpy
+from main_utils import mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation
+import numpy as np
 
 class testCommand:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
@@ -22,7 +22,7 @@ class testCommand:
 
     def Activated(self):
         """Called when the command is activated (e.g., button pressed)."""
-        defineTranformationMatrices()
+  
 
     def IsActive(self):
         """Determines if the command is active."""
@@ -31,86 +31,52 @@ class testCommand:
 
 FreeCADGui.addCommand('testCommand', testCommand())
 
-
-def InitilizeCoordinateSystems():
+def CreateLocalDHCoordinateSystems():
     doc, robot = FreeCAD.ActiveDocument, get_robot()
-    prev_bodies, prev_edges = robot.PrevBodies, robot.PrevEdges
-    lcs_arr = [doc.addObject('PartDesign::CoordinateSystem', 'LCS_link_0')]
-    prev_bodies[0].LinkedObject.addObject(lcs_arr[0])
-    lcs_arr[0].Placement.Base = prev_bodies[0].LinkedObject.Shape.Edges[prev_edges[0]].Curve.Center
-    BodyJointCoordinateSystems = []
+    edges = robot.PrevEdges
+    last = np.array([[1,0,0,0],
+                    [0,1,0,0],
+                    [0,0,1,0],
+                    [0,0,0,1]])
+    local_dh_coordinate_systems = []
+    for i, link in enumerate(robot.Links):
+        o_A_ol = mat_to_numpy(link.Placement.Matrix) 
+        ol_A_last = np.linalg.inv(o_A_ol) @ last
+        lcs = doc.addObject('PartDesign::CoordinateSystem', f'LCS_DH_{i}')
+        link.LinkedObject.addObject(lcs)
 
-    for i, body in zip(range(1,len(robot.Constraints)+1), robot.Bodies):
-        print(f"Creating LCS for joint {i}") 
-        lcs_ref = doc.addObject('PartDesign::CoordinateSystem', f'Angle_reference_LCS_{i-1}')
-        body.LinkedObject.addObject(lcs_ref)
-        lcs_ref.ViewObject.Visibility = False
-        
-        o_A_ol = prev_bodies[i-1].Placement.Matrix      # Local origo of previous body to glocal origo
-        ol_A_dh = lcs_arr[-1].Placement.Matrix          # Danevit-Hartenberg to local origo 
-        o_A_b  = body.Placement.Matrix                  # Local origo of current body to global origo
-        b_A_dh = o_A_b.inverse() * o_A_ol * ol_A_dh     # Danevit-Hartenberg in current body coordinate system
-        
-        lcs_ref.Placement.Matrix = b_A_dh
-        BodyJointCoordinateSystems.append(lcs_ref)
+        if i<len(robot.Links)-1:
+            origo = vec_to_numpy(link.LinkedObject.Shape.Edges[edges[i]].Curve.Center)
 
-        if i < len(robot.Constraints):
-            print(f" -- Creating DH for joint {i}") # debug
-            lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'LCS_link_{i}' ) 
-            body.LinkedObject.addObject(lcs_dh)
-
-            lcs_dh.Placement.Base = body.LinkedObject.Shape.Edges[prev_edges[i]].Curve.Center # Sets the base of the coordinate system to the center of the circle
-            
-            last_x = lcs_ref.Placement.Rotation.multVec(FreeCAD.Vector(1,0,0)) 
-            last_z = lcs_ref.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1)) 
-            circle = body.LinkedObject.Shape.Edges[prev_edges[i]].Curve 
-            
-            if last_z.cross(circle.Axis).Length < 1e-6: # If the circle axis is parallel to the last z-axis
+            last_x = ol_A_last[0:3, 0]
+            last_z = ol_A_last[0:3, 2]
+            circle = link.LinkedObject.Shape.Edges[edges[i]].Curve 
+            if np.linalg.norm( np.cross(last_z, vec_to_numpy(circle.Axis)) ) < 1e-6: # If the circle axis is parallel to the last z-axis
                 z_axis = last_z
                 x_axis = last_x
             else:
-                z_axis = circle.Axis # Sets the axis of the coordinate system to the axis of the circle
-                x_axis = last_z.cross(z_axis)
+                z_axis = vec_to_numpy(circle.Axis) # Sets the axis of the coordinate system to the axis of the circle
+                x_axis = np.cross(last_z, z_axis)
 
-            y_axis = z_axis.cross(x_axis)
-            lcs_dh.Placement.Rotation = FreeCAD.Rotation(x_axis, y_axis, z_axis)
+            y_axis = np.cross(z_axis, x_axis)
 
-            lcs_arr.append(lcs_dh)
-
-
-
-    robot.CoordinateSystems = lcs_arr
-    robot.BodyJointCoordinateSystems = BodyJointCoordinateSystems
-
-    correctDHpositions()
+        else: # If it is the last link, set the end effector as the origo
+            origo = vec_to_numpy(robot.EndEffector)
+            x_axis = ol_A_last[0:3, 0]
+            y_axis = ol_A_last[0:3, 1]
+            z_axis = ol_A_last[0:3, 2]
 
 
-
-def correctDHpositions():
-    robot = get_robot()
-    o_A_last = np.array([[1,0,0,0],
-                          [0,1,0,0],
-                          [0,0,1,0],
-                          [0,0,0,1]])
-
-    for lcs_ref, body_ref, lcs_dh, body_dh in zip(robot.BodyJointCoordinateSystems, robot.Bodies, robot.CoordinateSystems, robot.PrevBodies):
+        old_z = last_z
+        new_z = z_axis
+        p1 = sp.Matrix(ol_A_last[0:3, 3])
+        d1 = sp.Matrix(ol_A_last[0:3, 2]).normalized()
+        p2 = sp.Matrix(origo)
+        d2 = sp.Matrix(z_axis).normalized()
         
-        o_A_o2 = mat_to_numpy(body_ref.Placement.Matrix)
-        o2_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
-
-        o_A_new = o_A_o2 @ o2_A_ref
-        old_z = o_A_last[0:3, 2]
-        new_z = o_A_new[0:3, 2]
-        p1 = sp.Matrix(o_A_last[0:3, 3])
-        d1 = sp.Matrix(o_A_last[0:3, 2]).normalized()
-        p2 = sp.Matrix(o_A_new[0:3, 3])
-        d2 = sp.Matrix(o_A_new[0:3, 2]).normalized()
-        print(f"Old z: {old_z}, New z: {new_z}")
+        
         if np.linalg.norm(np.cross(old_z, new_z)) > 1e-6:
             print("Non-parallel z-axes")
-
-            print(f"p1: {p1}, d1: {d1}, p2: {p2}, d2: {d2}")
-
             t, s = sp.symbols('t s', real=True)
             eq1 = sp.Eq(d1.dot(p1 - p2 + t*d1 - s*d2), 0)
             eq2 = sp.Eq(d2.dot(p1 - p2 + t*d1 - s*d2), 0)
@@ -118,50 +84,265 @@ def correctDHpositions():
             sol = sol[0]
             print(sol)
             translation = float(sol[s])
-            o_A_last = o_A_new
         else:
             print("Parallel z-axes")
             translation = float(p1[2]-p2[2])
-            o_A_last = o_A_new
+        print(f"link: {link.Name}")
+        #print(f"p1: {p1}, d1: {d1}, p2: {p2}, d2: {d2}")
 
         translation_mat = np.array([[1,0,0,0],
                                     [0,1,0,0],
                                     [0,0,1, translation],
-                                    [0,0,0,1]])
-        lcs_ref.Placement.Matrix = numpy_to_mat( mat_to_numpy(lcs_ref.Placement.Matrix) @ translation_mat)
-        lcs_dh.Placement.Matrix = numpy_to_mat( mat_to_numpy(lcs_dh.Placement.Matrix) @ translation_mat)
-    
-    for lcs_ref, lcs_dh in zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:]):
-        angle_between = 1
-        while angle_between>0:
-            x_ref = mat_to_numpy(lcs_ref.Placement.Matrix)[0:3, 0]
-            x_dh  = mat_to_numpy(lcs_dh.Placement.Matrix)[0:3, 0]
-            angle_between = np.arccos(np.dot(x_ref, x_dh) / (np.linalg.norm(x_ref) * np.linalg.norm(x_dh)))
-
-            lcs_ref.Placement.Matrix = numpy_to_mat(mat_to_numpy(lcs_ref.Placement.Matrix) @ np_rotation(-angle_between, 'z'))
-            print(f"Angle between x-axes: {angle_between}")
-
-    updateAngles()
+                                    [0,0,0,1]])        
+        
+        ol_A_dh = np.array([[x_axis[0], y_axis[0], z_axis[0], origo[0]],
+                            [x_axis[1], y_axis[1], z_axis[1], origo[1]],
+                            [x_axis[2], y_axis[2], z_axis[2], origo[2]],
+                            [0, 0, 0, 1]]) @ translation_mat
 
 
-def updateAngles():
+        lcs.Placement.Matrix = numpy_to_mat(ol_A_dh)
+
+
+        # Rotate body to allight the x-axes
+        last_x = ol_A_last[0:3, 0]
+        current_x = ol_A_dh[0:3, 0]
+        cos_angle = np.dot(last_x, current_x) / (np.linalg.norm(last_x) * np.linalg.norm(current_x))
+        sin_angle = np.linalg.norm(np.cross(last_x, current_x)) / (np.linalg.norm(last_x) * np.linalg.norm(current_x))
+        angle = np.arctan2(sin_angle, cos_angle)
+        if np.dot(np.cross(last_x, current_x), last_z) < 0:
+            angle = -angle
+        angle_between = angle
+        print(f"Angle between x-axes: {angle_between}")
+        print(f"Axis of rotation: {last[0:3, 2]}")
+        print(f"point of rotation: {last[0:3, 3]}")
+
+        for link2 in robot.Links[i:]:
+            o_A_o2 = mat_to_numpy(link2.Placement.Matrix)
+            o2_A_last = np.linalg.inv(o_A_o2) @ last
+            link2.Placement.Matrix = numpy_to_mat( last @ np_rotation(-angle_between, 'z') @ np.linalg.inv(o2_A_last) )
+
+        last = mat_to_numpy(link.Placement.Matrix) @ mat_to_numpy(lcs.Placement.Matrix)
+        local_dh_coordinate_systems.append(lcs)
+
+    robot.DHLocalCoordinateSystems = local_dh_coordinate_systems
+
+    findDHPeremeters()
+    createDHCoordinateSystems()
+    updateDHTransformations()
+    positionDHCoordinateSystems()
+    updateJacobian()
+
+
+
+def positionBodies():
     robot = get_robot()
-    lcs_dh_list = robot.CoordinateSystems
-    bodies_dh_list = robot.PrevBodies
-    lcs_ref_list = robot.BodyJointCoordinateSystems
-    bodies_ref_list = robot.Bodies
-
     robot.Angles = [(angle + 180) % 360 - 180 for angle in robot.Angles]
 
+    for theory_dh, freecad_dh, body in zip(robot.DHCoordinateSystems[1:], robot.DHLocalCoordinateSystems[1:], robot.Bodies):
+        o_A_theory = mat_to_numpy(theory_dh.Placement.Matrix)
+        ol_A_freecad = mat_to_numpy(freecad_dh.Placement.Matrix)
+        body.Placement.Matrix = numpy_to_mat(o_A_theory @ np.linalg.inv(ol_A_freecad))
+        
 
-    for lcs_dh, body_dh, lcs_ref, body_ref, angle in zip(lcs_dh_list, bodies_dh_list, lcs_ref_list, bodies_ref_list, robot.Angles):
-        o_A_ol = body_dh.Placement.Matrix
-        ol_A_dh = lcs_dh.Placement.Matrix * FreeCAD.Rotation(FreeCAD.Vector(0,0,1), angle).toMatrix()
-        b_A_dh = lcs_ref.Placement.Matrix
-        o_A_b =  o_A_ol * ol_A_dh * b_A_dh.inverse()
+
+
         
-        body_ref.Placement.Matrix =  o_A_b 
+##################################################################################################
+
+class defineEndEffectorCommand:
+    """Command to draw the robot using Denavit-Hartenberg parameters."""
+
+    def __init__(self):
+        pass
+
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'endEffector.svg'),
+            'MenuText': 'Define End Effector',
+            'ToolTip': 'Defines the position of the end effector based on a point on the last link'
+        }
+
+    def Activated(self):
+        defineEndEffector()
+
+    def IsActive(self):        
+        sel = FreeCADGui.Selection.getSelection()
+
+        sel = FreeCADGui.Selection.getSelectionEx()
+        if sel:
+            sobj = sel[0]
+            sub_objects = sobj.SubObjects
+            
+            if sub_objects:
+                first_subobj = sub_objects[0]
+                
+                # For a vertex, you can get its 3D coordinates:
+                if first_subobj.ShapeType == "Vertex":
+                    return True
+
+        return False
+
+FreeCADGui.addCommand('defineEndEffectorCommand', defineEndEffectorCommand())
+
+
+
+def defineEndEffector():
+    robot = get_robot()
+    old_angles = robot.Angles
+    robot.Angles = [0 for _ in robot.Angles]
+    sel = FreeCADGui.Selection.getSelectionEx()
+
+    if sel:
+        sobj = sel[0]
+        sub_objects = sobj.SubObjects
         
+        if sub_objects:
+            first_subobj = sub_objects[0]
+            
+            # For a vertex, you can get its 3D coordinates:
+            if first_subobj.ShapeType == "Vertex":
+                print("Vertex coordinates:", first_subobj.Point)
+                robot.EndEffector = first_subobj.Point
+                robot.DHLocalCoordinateSystems[-1].Placement.Base = first_subobj.Point
+                findDHPeremeters()
+                updateDHTransformations()
+                positionDHCoordinateSystems()
+
+    robot.Angles = old_angles
+
+
+
+
+
+##################################################################################################
+
+import sympy as sp
+
+"""
+def defineTranformationMatrices():
+    robot = get_robot()
+    theta = robot.sympyVariables
+    old_angles = robot.Angles
+    robot.Angles = [0 for _ in robot.Angles]
+
+    T_arr = [sp.Matrix(mat_to_numpy(robot.CoordinateSystems[0].Placement.Matrix))]
+
+    for i, (lcs_ref, lcs_dh) in enumerate(zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:])):
+        print(f"Creating transformation matrix for joint {i}, {lcs_ref.Name} -> {lcs_dh.Name}")
+        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
+        ol_A_dh = mat_to_numpy(lcs_dh.Placement.Matrix)
+        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
+
+        rot = sp.Matrix([[sp.cos(theta[i]), -sp.sin(theta[i]), 0, 0],
+                         [sp.sin(theta[i]), sp.cos(theta[i]), 0, 0],
+                         [0, 0, 1, 0],
+                         [0, 0, 0, 1]])
+        
+        T_arr.append(T_arr[-1] * rot * sp.Matrix(ref_A_dh)) 
+
+    ol_A_lc = mat_to_numpy(robot.BodyJointCoordinateSystems[-1].Placement.Matrix)
+    ol_P = np.array([[0,0,0,robot.EndEffector.x],
+                       [0,0,0,robot.EndEffector.y],
+                       [0,0,0,robot.EndEffector.z],
+                       [0,0,0,1]])
+    
+    T_arr.append(T_arr[-1] * np.linalg.inv(ol_A_lc) @ ol_P)
+    robot.SympyTransformations = T_arr
+    robot.NumpyTransformations = [sp.lambdify(theta, T, 'numpy') for T in T_arr]
+    robot.Angles = old_angles
+    updateGlobalEndEffector()
+"""
+
+def updateJacobian():
+    robot = get_robot()
+    T_arr = robot.DHTransformations
+    for T in T_arr:
+        print(T)
+    Jac = []
+    On = T_arr[-1][0:3, 3]
+    for i in range(1, len(T_arr)):
+        Zi = T_arr[i-1][0:3, 2]
+        Oi = T_arr[i-1][0:3, 3]
+        Jv = np.cross( Zi , (On - Oi)  )
+        Jw = Zi
+        Jac.append([*Jv, *Jw])
+    robot.Jacobian = np.array(Jac).T
+    print(np.shape(robot.Jacobian))
+
+
+
+##################################################################################################
+
+
+def findDHPeremeters():
+    robot = get_robot()
+    DH_peremeters = []
+    #robot.Angles = [0 for _ in robot.Angles]
+
+    last_lcs = robot.DHLocalCoordinateSystems[:len(robot.Links)-1]
+    last_body = robot.Links[:len(robot.Links)-1]
+    current_lcs = robot.DHLocalCoordinateSystems[1:]
+    current_body = robot.Links[1:]
+
+    for i, last_lcs, last_body, current_lcs, current_body in zip(range(1,len(robot.Links)), last_lcs, last_body, current_lcs, current_body):
+        o_A_last = mat_to_numpy(last_body.Placement.Matrix)
+        last_A_dh1 = mat_to_numpy(last_lcs.Placement.Matrix)
+        o_A_current = mat_to_numpy(current_body.Placement.Matrix)
+        current_A_dh2 = mat_to_numpy(current_lcs.Placement.Matrix)
+        dh1_A_dh2 = np.linalg.inv(last_A_dh1) @ np.linalg.inv(o_A_last) @ o_A_current @ current_A_dh2
+        
+        d = dh1_A_dh2[2, 3]
+        a = dh1_A_dh2[0, 3]
+        alpha = np.arccos(dh1_A_dh2[2,2]) if abs(np.arccos(dh1_A_dh2[2,2]) - np.arcsin(dh1_A_dh2[2,1])) < 1e-6 else -np.arccos(dh1_A_dh2[2,2])
+        DH_peremeters.append([f'theta_{i}', d, a, alpha])     
+
+    robot.DHPerameters = DH_peremeters
+    DH_peremeters = [[round(float(param), 4) if isinstance(param, float) else param for param in dh] for dh in DH_peremeters]
+    for dh in DH_peremeters:
+        print(dh)
+
+def createDHCoordinateSystems():
+    robot = get_robot()
+    doc = FreeCAD.ActiveDocument
+    empty_body = doc.addObject('PartDesign::Body', 'DH_coordinate_systems')
+    doc.recompute()
+    dh_coordinate_systems = []
+    for i in range(len(robot.DHPerameters)+1):
+        lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'DH_{i}' ) 
+        empty_body.addObject(lcs_dh)
+        dh_coordinate_systems.append(lcs_dh)
+    robot.DHCoordinateSystems = dh_coordinate_systems
+
+
+def updateDHTransformations():
+    robot = get_robot()
+    last = None
+    trans = [ mat_to_numpy(robot.Links[0].Placement.Matrix) @ mat_to_numpy(robot.DHCoordinateSystems[0].Placement.Matrix)]
+    for dh_perameters, theta in zip(robot.DHPerameters, robot.Angles):
+        _ , d, a, alpha = dh_perameters
+        theta = np.deg2rad(theta)
+        dh_trans = np.array([[np.cos(theta), -np.sin(theta)*np.cos(alpha), np.sin(theta)*np.sin(alpha), a*np.cos(theta)],
+                             [np.sin(theta), np.cos(theta)*np.cos(alpha), -np.cos(theta)*np.sin(alpha), a*np.sin(theta)],
+                             [0, np.sin(alpha), np.cos(alpha), d],
+                             [0, 0, 0, 1]])
+        last = last @ dh_trans if last is not None else dh_trans
+        trans.append(last)
+    robot.DHTransformations = trans
+
+def positionDHCoordinateSystems():
+    robot = get_robot()
+    for transformation, dh_coordinate in zip(robot.DHTransformations, robot.DHCoordinateSystems):
+        dh_coordinate.Placement.Matrix = numpy_to_mat(transformation)
+
+
+        
+    
+
+
+
+
+
 
 ######################################################################################################
 
@@ -194,8 +375,7 @@ class rotateBodyZeroCommand:
 FreeCADGui.addCommand('rotateBodyZeroCommand', rotateBodyZeroCommand())
 
 
-from main_utils import mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation
-import numpy as np
+
 
 def rotateBodyZero():
     robot = get_robot()
@@ -216,7 +396,6 @@ def rotateBodyZero():
     robot.BodyJointCoordinateSystems[idx].Placement.Rotation = FreeCAD.Placement(numpy_to_mat(o1_A_ref)).Rotation
     robot.CoordinateSystems[idx+1].Placement.Rotation = FreeCAD.Placement(numpy_to_mat(o1_A_dh)).Rotation
 
-    updateAngles()
 
 
 
@@ -263,197 +442,4 @@ def changeRotationDirection():
         robot.CoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 180) # Swap direction of the z-axis
         robot.BodyJointCoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(1,0,0), 180)
 
-        updateAngles()
 
-
-
-        
-##################################################################################################
-
-class defineEndEffectorCommand:
-    """Command to draw the robot using Denavit-Hartenberg parameters."""
-
-    def __init__(self):
-        pass
-
-    def GetResources(self):
-        return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'endEffector.svg'),
-            'MenuText': 'Define End Effector',
-            'ToolTip': 'Defines the position of the end effector based on a point on the last link'
-        }
-
-    def Activated(self):
-        defineEndEffector()
-
-    def IsActive(self):        
-        sel = FreeCADGui.Selection.getSelection()
-
-        sel = FreeCADGui.Selection.getSelectionEx()
-        if sel:
-            sobj = sel[0]
-            sub_objects = sobj.SubObjects
-            
-            if sub_objects:
-                first_subobj = sub_objects[0]
-                
-                # For a vertex, you can get its 3D coordinates:
-                if first_subobj.ShapeType == "Vertex":
-                    return True
-
-        return False
-
-FreeCADGui.addCommand('defineEndEffectorCommand', defineEndEffectorCommand())
-
-
-
-def defineEndEffector():
-    robot = get_robot()
-    sel = FreeCADGui.Selection.getSelectionEx()
-
-    if sel:
-        sobj = sel[0]
-        sub_objects = sobj.SubObjects
-        
-        if sub_objects:
-            first_subobj = sub_objects[0]
-            
-            # For a vertex, you can get its 3D coordinates:
-            if first_subobj.ShapeType == "Vertex":
-                print("Vertex coordinates:", first_subobj.Point)
-                robot.EndEffector = first_subobj.Point
-
-
-
-
-
-##################################################################################################
-
-import sympy as sp
-
-def defineTranformationMatrices():
-    robot = get_robot()
-    theta = robot.sympyVariables
-    old_angles = robot.Angles
-    robot.Angles = [0 for _ in robot.Angles]
-
-    T_arr = [sp.Matrix(mat_to_numpy(robot.CoordinateSystems[0].Placement.Matrix))]
-
-    for i, (lcs_ref, lcs_dh) in enumerate(zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:])):
-        print(f"Creating transformation matrix for joint {i}, {lcs_ref.Name} -> {lcs_dh.Name}")
-        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
-        ol_A_dh = mat_to_numpy(lcs_dh.Placement.Matrix)
-        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
-
-        rot = sp.Matrix([[sp.cos(theta[i]), -sp.sin(theta[i]), 0, 0],
-                         [sp.sin(theta[i]), sp.cos(theta[i]), 0, 0],
-                         [0, 0, 1, 0],
-                         [0, 0, 0, 1]])
-        
-        T_arr.append(T_arr[-1] * rot * sp.Matrix(ref_A_dh)) 
-
-    ol_A_lc = mat_to_numpy(robot.BodyJointCoordinateSystems[-1].Placement.Matrix)
-    ol_P = np.array([[0,0,0,robot.EndEffector.x],
-                       [0,0,0,robot.EndEffector.y],
-                       [0,0,0,robot.EndEffector.z],
-                       [0,0,0,1]])
-    
-    T_arr.append(T_arr[-1] * np.linalg.inv(ol_A_lc) @ ol_P)
-    robot.SympyTransformations = T_arr
-    robot.NumpyTransformations = [sp.lambdify(theta, T, 'numpy') for T in T_arr]
-    robot.Angles = old_angles
-    updateGlobalEndEffector()
-
-
-def defineJacobian():
-    robot = get_robot()
-    T_arr = robot.SympyTransformations
-    Jac = []
-    On = T_arr[-1][0:3, 3]
-    for i in range(1, len(T_arr)):
-        Zi = T_arr[i-1][0:3, 2]
-        Oi = T_arr[i-1][0:3, 3]
-        Jv = Zi.cross(On - Oi)
-        Jw = Zi
-        Jac.append([*Jv, *Jw])
-    robot.Jacobian = sp.Matrix(Jac).T
-    robot.NumpyJacobian = sp.lambdify(robot.sympyVariables, robot.Jacobian, 'numpy')
-    return sp.Matrix(Jac).T
-
-
-
-##################################################################################################
-
-
-
-class FindDHParametersCommand:
-    """A FreeCAD command to calculate Danevit Hartenberg parameters based on robot object."""
-
-    def GetResources(self):
-        return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'danevitHartenberg.svg'),
-            'MenuText': 'Calculate DH Parameters',
-            'ToolTip': 'Finds the Danevit Hartenberg parameters for the robot'
-        }
-
-    def Activated(self):
-        """Called when the command is activated (button clicked)."""
-        print(findDHPeremeters())
-
-    def IsActive(self):
-        """Determine if the command should be active."""
-        return True if get_robot() != None else False
-    
-FreeCADGui.addCommand('FindDHParametersCommand', FindDHParametersCommand())
-
-
-
-
-def findDHPeremeters():
-    doc = FreeCAD.ActiveDocument
-    empty_body = doc.addObject('PartDesign::Body', 'DH_coordinate_systems')
-    doc.recompute()
-    robot = get_robot()
-    DH_peremeters = []
-    robot.Angles = [0 for _ in robot.Angles]
-
-    for i, (lcs_ref, lcs_dh) in enumerate(zip(robot.BodyJointCoordinateSystems, robot.CoordinateSystems[1:])):
-        ol_A_ref = mat_to_numpy(lcs_ref.Placement.Matrix)
-        ol_A_dh = mat_to_numpy(lcs_dh.Placement.Matrix)
-        ref_A_dh = np.linalg.inv(ol_A_ref) @ ol_A_dh
-        d = ref_A_dh[2, 3]
-        a = ref_A_dh[0, 3]
-        alpha = np.arccos(ref_A_dh[2,2]) if abs(np.arccos(ref_A_dh[2,2]) - np.arcsin(ref_A_dh[2,1])) < 1e-6 else -np.arccos(ref_A_dh[2,2])
-        DH_peremeters.append([f'theta_{i+1}', d, a, alpha])
-    
-    robot.DHPerameters = DH_peremeters
-    DH_peremeters = [[round(float(param), 4) if isinstance(param, float) else param for param in dh] for dh in DH_peremeters]
-    for dh in DH_peremeters:
-        print(dh)
-
-    
-    dh_coordinate_systems = []
-    for i, dh in enumerate(DH_peremeters):
-        lcs_dh = doc.addObject( 'PartDesign::CoordinateSystem', f'DH_{i}' ) 
-        empty_body.addObject(lcs_dh)
-        dh_coordinate_systems.append(lcs_dh)
-    robot.DHCoordinateSystems = dh_coordinate_systems
-    positionDHCoordinates()
-
-
-def positionDHCoordinates():
-    robot = get_robot()
-    last = None
-    for dh_perameters, dh_coordinate, theta in zip(robot.DHPerameters, robot.DHCoordinateSystems[1:], robot.Angles):
-        _ , d, a, alpha = dh_perameters
-        theta = np.deg2rad(theta)
-        dh_trans = np.array([[np.cos(theta), -np.sin(theta)*np.cos(alpha), np.sin(theta)*np.sin(alpha), a*np.cos(theta)],
-                             [np.sin(theta), np.cos(theta)*np.cos(alpha), -np.cos(theta)*np.sin(alpha), a*np.sin(theta)],
-                             [0, np.sin(alpha), np.cos(alpha), d],
-                             [0, 0, 0, 1]])
-        last = last @ dh_trans if last is not None else dh_trans
-        dh_coordinate.Placement.Matrix = numpy_to_mat(last)
-
-
-        
-    

@@ -1,7 +1,7 @@
 import FreeCAD
 import FreeCADGui
 import os
-from main_utils import get_robot
+from main_utils import get_robot, vec_to_numpy
 import numpy as np
 import math
 
@@ -19,8 +19,7 @@ class ToTargetPointCommand:
 
     def Activated(self):
         global_pos = self.get_target_position()
-        if global_pos:
-            solve_ik(global_pos)
+        solve_ik(global_pos)
 
     def IsActive(self):
         return self.is_target_selected() and get_robot() is not None
@@ -74,9 +73,8 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
     target_active = abs(target_dir.Length - 1) < 1e-4
     
     for iteration in range(max_iterations):
-        current_pos = robot.EndEffectorGlobal
-        delta_pos = target_pos - current_pos
-        delta_x_position = np.array([delta_pos.x, delta_pos.y, delta_pos.z])
+        current_pos = (robot.DHTransformations[-1] @ np.array([0, 0, 0, 1]))[:3]
+        delta_x_position = vec_to_numpy(target_pos) - current_pos
 
         # Initialize error components
         position_error = np.linalg.norm(delta_x_position)
@@ -84,21 +82,12 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
 
         # Calculate orientation components if target_dir is specified
         if target_active:
-            # Get current end effector orientation (z-axis)
-            o_A_b = robot.Bodies[-1].Placement.Rotation
-            b_A_lc = robot.BodyJointCoordinateSystems[-1].Placement.Rotation
-            current_rot = o_A_b.multiply(b_A_lc)
-            current_dir = current_rot.multVec(FreeCAD.Vector(0, 0, 1))
-            current_dir.normalize()  # Normalize in-place
-
+            
+            current_dir = robot.DHTransformations[-1][:3, 2]
             
             # Calculate orientation error using cross product
-            orientation_error_vec = current_dir.cross(target_dir)
-            delta_x_orientation = orientation_weight * np.array([
-                orientation_error_vec.x,
-                orientation_error_vec.y,
-                orientation_error_vec.z
-            ])
+            orientation_error_vec = np.cross(current_dir, target_dir)
+            delta_x_orientation = orientation_weight * orientation_error_vec
             
             # Combine position and orientation errors
             delta_x = np.concatenate([delta_x_position, delta_x_orientation])
@@ -120,7 +109,7 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
         current_angles_rad = np.array([math.radians(a) for a in robot.Angles])
         
         # Calculate Jacobian at current position
-        J_full = robot.NumpyJacobian(*current_angles_rad)
+        J_full = robot.Jacobian
         
         # Select appropriate Jacobian based on orientation solving
         J = J_full if target_active else J_full[:3, :]

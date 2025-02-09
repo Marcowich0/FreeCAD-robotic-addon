@@ -36,6 +36,9 @@ def np_rotation(angle, axis):
                          [0, 0, 0, 1]])
     
 
+def vec_to_numpy(v):
+    # Assumes v has attributes x, y, z.
+    return np.array([v.x, v.y, v.z])
 
 
 def updateGlobalEndEffector():

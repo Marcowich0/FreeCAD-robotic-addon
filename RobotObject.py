@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from forward_kinematics import InitilizeCoordinateSystems, updateAngles, defineTranformationMatrices, defineJacobian, positionDHCoordinates
+from forward_kinematics import CreateLocalDHCoordinateSystems, positionBodies, updateJacobian, positionDHCoordinateSystems, updateDHTransformations
 from main_utils import get_robot, updateGlobalEndEffector
 import numpy as np
 import sympy as sp
@@ -19,8 +19,6 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "PrevBodies", "Robot", "List of previous bodies").PrevBodies = []
         obj.addProperty("App::PropertyIntegerList", "PrevEdges", "Robot", "List of previous edges").PrevEdges = []
         
-        obj.addProperty("App::PropertyLinkList", "CoordinateSystems", "Robot", "List of coordinate systems").CoordinateSystems = []
-        obj.addProperty("App::PropertyLinkList", "BodyJointCoordinateSystems", "Robot", "List of body coordinate systems").BodyJointCoordinateSystems = []
         obj.addProperty("App::PropertyFloatList", "Angles", "Robot", "List of angles").Angles = []
 
         obj.addProperty("App::PropertyVector", "EndEffector", "Robot", "End effector of the robot").EndEffector = FreeCAD.Vector(0, 0, 0)
@@ -29,12 +27,16 @@ class RobotObject:
         obj.addProperty("App::PropertyPythonObject", "sympyVariables", "Robot", "List of sympy variables").sympyVariables = []
         obj.addProperty("App::PropertyPythonObject", "SympyTransformations", "Robot", "List of sympy transforms").SympyTransformations = []
         obj.addProperty("App::PropertyPythonObject", "NumpyTransformations", "Robot", "List of numpy transforms").NumpyTransformations = []
+        
         obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
         obj.addProperty("App::PropertyPythonObject", "NumpyJacobian", "Robot", "Numpy Jacobian matrix").NumpyJacobian = None
         obj.addProperty("App::PropertyVector", "EndEffectorOrientation", "Robot", "End effector orientation").EndEffectorOrientation = FreeCAD.Vector(0, 0, 0)
 
+        obj.addProperty("App::PropertyLinkList", "Links", "Robot", "List of links").Links = []
         obj.addProperty("App::PropertyPythonObject", "DHPerameters", "Robot", "DH parameters").DHPerameters = []
-        obj.addProperty("App::PropertyPythonObject", "DHCoordinateSystems", "Robot", "DH Coordinate Systems").DHCoordinateSystems = []
+        obj.addProperty("App::PropertyLinkList", "DHLocalCoordinateSystems", "Robot", "DH Local Coordinate Systems").DHLocalCoordinateSystems = []
+        obj.addProperty("App::PropertyLinkList", "DHCoordinateSystems", "Robot", "DH Coordinate Systems").DHCoordinateSystems = []
+        obj.addProperty("App::PropertyPythonObject", "DHTransformations", "Robot", "List of numpy transforms").DHTransformations = []
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
@@ -51,15 +53,14 @@ class RobotObject:
     def onChanged(self, obj, prop):
         """Handle property changes."""
         if prop == "Angles":
-            if obj.BodyJointCoordinateSystems and obj.DHPerameters:
-                updateAngles()
-                updateGlobalEndEffector()
-                positionDHCoordinates()
+            if obj.DHPerameters:
+                updateDHTransformations()
+                positionDHCoordinateSystems()
+                positionBodies()
+                updateJacobian()
+                
 
-        if prop == "EndEffector":
-            if hasattr(obj, 'NumpyTransformations'):
-                defineTranformationMatrices()
-                defineJacobian()
+
             
                 
 
@@ -140,9 +141,8 @@ def initialize_robot():
     doc.recompute()
 
     connectRobotToAssembly()
-    InitilizeCoordinateSystems()
-    defineTranformationMatrices()
-    defineJacobian()
+    CreateLocalDHCoordinateSystems()
+    updateJacobian()
 
     return robot_obj
 
@@ -243,6 +243,7 @@ def connectRobotToAssembly():
                     link_prev_arr.append(  Link(joint, eval(f"FreeCAD.ActiveDocument.{ref2}"), edge2)  )
                     
 
+    robot.Links = [link.Body for link in link_arr]
     link_arr.pop(0) # Remove the grounded joint (Is not a motor)
 
     robot.Constraints = [link.Joint for link in link_arr]

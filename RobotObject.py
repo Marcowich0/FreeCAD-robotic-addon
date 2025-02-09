@@ -47,7 +47,7 @@ class RobotObject:
     def onChanged(self, obj, prop):
         """Handle property changes."""
         if prop == "Angles":
-            if obj.DHPerameters:
+            if obj.DHLocalCoordinateSystems:
                 updateDHTransformations()
                 positionDHCoordinateSystems()
                 positionBodies()

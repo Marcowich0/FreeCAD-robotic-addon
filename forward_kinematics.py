@@ -139,7 +139,6 @@ def InitializeCoordinateSystems():
 
 def positionBodies():
     robot = get_robot()
-    robot.Angles = [(angle + 180) % 360 - 180 for angle in robot.Angles]
 
     for theory_dh, freecad_dh, link in zip(robot.DHCoordinateSystems, robot.DHLocalCoordinateSystems, robot.Links):
         o_A_theory = mat_to_numpy(theory_dh.Placement.Matrix)
@@ -329,7 +328,7 @@ class rotateBodyZeroCommand:
             return False
         
         for s in sel:
-            if s not in get_robot().Bodies:
+            if s not in get_robot().Links:
                 return False
         return True
 
@@ -340,22 +339,18 @@ FreeCADGui.addCommand('rotateBodyZeroCommand', rotateBodyZeroCommand())
 
 def rotateBodyZero():
     robot = get_robot()
-    body = FreeCADGui.Selection.getSelection()[0]
+    link = FreeCADGui.Selection.getSelection()[0]
 
-    idx = robot.Bodies.index(body)
-    print(f"Flipping {body.Name}, idx: {idx}")
+    angles = robot.Angles
+    angle_offsets = robot.AngleOffsets
 
-    o1_A_ref = mat_to_numpy(robot.BodyJointCoordinateSystems[idx].Placement.Matrix)
-    o1_A_dh = mat_to_numpy(robot.CoordinateSystems[idx+1].Placement.Matrix)
+    idx = robot.Links.index(link) - 1
     
-    ref_A_dh = np.linalg.inv(o1_A_ref) @ o1_A_dh
+    angle_offsets[idx] = (angle_offsets[idx] + 90) if (angle_offsets[idx] + 90) <= 180 else (angle_offsets[idx] - 270)
+    angles[idx] = (angles[idx] + 90) if (angles[idx] + 90) <= angle_offsets[idx] + 180  else (angles[idx] - 270)
 
-    o1_A_ref = o1_A_ref @ np_rotation(-np.pi/2, 'z')
-    ref_A_dh = np_rotation(np.pi/2, 'z') @ ref_A_dh
-    o1_A_dh = o1_A_ref @ ref_A_dh
-
-    robot.BodyJointCoordinateSystems[idx].Placement.Rotation = FreeCAD.Placement(numpy_to_mat(o1_A_ref)).Rotation
-    robot.CoordinateSystems[idx+1].Placement.Rotation = FreeCAD.Placement(numpy_to_mat(o1_A_dh)).Rotation
+    robot.Angles = angles
+    robot.AngleOffsets = angle_offsets
 
 
 

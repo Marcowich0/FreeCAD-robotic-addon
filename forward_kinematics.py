@@ -46,18 +46,20 @@ def CreateLocalDHCoordinateSystems():
         lcs = doc.addObject('PartDesign::CoordinateSystem', f'LCS_DH_{i}')
         link.LinkedObject.addObject(lcs)
 
-        if i<len(robot.Links)-1:
-            origo = vec_to_numpy(link.LinkedObject.Shape.Edges[edges[i]].Curve.Center)
+        last_x = ol_A_last[0:3, 0]
+        last_z = ol_A_last[0:3, 2]
 
-            last_x = ol_A_last[0:3, 0]
-            last_z = ol_A_last[0:3, 2]
+        if i<len(robot.Links)-1:
             circle = link.LinkedObject.Shape.Edges[edges[i]].Curve 
+            origo = vec_to_numpy(circle.Center)
+            
             if np.linalg.norm( np.cross(last_z, vec_to_numpy(circle.Axis)) ) < 1e-6: # If the circle axis is parallel to the last z-axis
                 z_axis = last_z
                 diff = origo - ol_A_last[0:3, 3]
-                diff[2] = 0
-                if np.linalg.norm(diff) > 1e-6:
-                    x_axis = diff / np.linalg.norm(diff)
+                proj = np.dot(diff, last_z) * last_z
+                dh_diff = diff - proj
+                if np.linalg.norm(dh_diff) > 1e-6:
+                    x_axis = dh_diff / np.linalg.norm(dh_diff)
                 else:
                     x_axis = last_x
 
@@ -74,19 +76,22 @@ def CreateLocalDHCoordinateSystems():
             z_axis = ol_A_last[0:3, 2]
 
 
-
         # Translate the coordinate system to the correct position along the x-axis
+        print(f"comparison {ol_A_last[0:3, 2]}, {last_z}")
         p1 = sp.Matrix(ol_A_last[0:3, 3])
-        d1 = sp.Matrix(ol_A_last[0:3, 2]).normalized()
+        d1 = sp.Matrix(last_z).normalized()
         p2 = sp.Matrix(origo)
         d2 = sp.Matrix(z_axis).normalized()
         
-        if np.linalg.norm(np.cross(last_z, z_axis)) > 1e-6:
+        print(f"p1: {p1}, p2: {p2}, d1: {d1}, d2: {d2}, last_z: {last_z}, z_axis: {z_axis}")
+        print(f"Cross product: {np.linalg.norm(np.cross(last_z , z_axis))}")
+        if np.linalg.norm(np.cross(last_z , z_axis)) > 1e-6:
             print("Non-parallel z-axes")
             t, s = sp.symbols('t s', real=True)
             eq1 = sp.Eq(d1.dot(p1 - p2 + t*d1 - s*d2), 0)
             eq2 = sp.Eq(d2.dot(p1 - p2 + t*d1 - s*d2), 0)
             sol = sp.solve([eq1, eq2], (t, s), dict=True)[0]
+            print(sol)
             translation = float(sol[s])
         else:
             print("Parallel z-axes")
@@ -107,19 +112,20 @@ def CreateLocalDHCoordinateSystems():
 
 
         # Rotate body to allign the x-axis of the DH coordinate system with the x-axis of the body
-        last_x = ol_A_last[0:3, 0]
-        current_x = ol_A_dh[0:3, 0]
+        last_x = last_x
+        current_x = x_axis
         cos_angle = np.dot(last_x, current_x) / (np.linalg.norm(last_x) * np.linalg.norm(current_x))
         sin_angle = np.linalg.norm(np.cross(last_x, current_x)) / (np.linalg.norm(last_x) * np.linalg.norm(current_x))
         angle = np.arctan2(sin_angle, cos_angle)
         if np.dot(np.cross(last_x, current_x), last_z) < 0:
             angle = -angle
         angle_between = angle
-
+        
         for link2 in robot.Links[i:]:
             o_A_o2 = mat_to_numpy(link2.Placement.Matrix)
             o2_A_last = np.linalg.inv(o_A_o2) @ last
             link2.Placement.Matrix = numpy_to_mat( last @ np_rotation(-angle_between, 'z') @ np.linalg.inv(o2_A_last) )
+
 
         last = mat_to_numpy(link.Placement.Matrix) @ mat_to_numpy(lcs.Placement.Matrix)
         local_dh_coordinate_systems.append(lcs)

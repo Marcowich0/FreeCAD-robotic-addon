@@ -13,7 +13,6 @@ animation_state = "stopped"  # Possible states: "playing", "paused", "stopped"
 current_animation_index = 0
 animation_timer = None
 
-
 from main_utils import currentSelectionType, get_robot
 from inverse_kinematics import solve_ik
 
@@ -29,6 +28,9 @@ class Trajectory:
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
         obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 100
         obj.addProperty("App::PropertyPythonObject", "Angles", "Trajectory", "List of angles").Angles = []
+
+        obj.addProperty("App::PropertyInteger", "NumberOfPoints", "Trajectory", "Number of points").NumberOfPoints = 100
+        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 0.0
     
     def execute(self, obj):
         pass  # Recompute logic here
@@ -67,8 +69,8 @@ class ViewProviderTrajectory:
     def __setstate__(self, state):
         return None
 
-
-
+# ---------------------------------------------------------------------------
+# Command to add a Trajectory object.
 class AddTrajectoryCommand:
     def GetResources(self):
         return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'trajectory.svg'), 
@@ -83,7 +85,8 @@ class AddTrajectoryCommand:
         Trajectory(trajectory_obj)
         trajectory_obj.ViewObject.Proxy = ViewProviderTrajectory(trajectory_obj.ViewObject)
 
-        selectLinePoints(trajectory_obj)
+        # Instead of calculating points now, only store the edge (and parent body)
+        selectEdgeForTrajectory(trajectory_obj)
 
         doc.recompute()
 
@@ -92,23 +95,116 @@ class AddTrajectoryCommand:
 
 FreeCADGui.addCommand('AddTrajectoryCommand', AddTrajectoryCommand())
 
+# ---------------------------------------------------------------------------
+# New helper function: only stores the edge (and body) on the trajectory object.
+def selectEdgeForTrajectory(trajectory_obj):
+    selection = FreeCADGui.Selection.getSelectionEx()
+    
+    if not selection or not selection[0].SubElementNames:
+        print("Error: No selection or invalid selection.")
+        return
+
+    sel = selection[0]
+    subelement = sel.SubElementNames[0]
+    
+    if not subelement.startswith('Edge'):
+        print("Error: Please select an edge.")
+        return
+
+    obj = sel.Object
+    edge = obj.getSubObject(subelement)
+    
+    if not edge:
+        print("Error: Could not retrieve the selected edge.")
+        return
+
+    # Store the edge reference using PropertyLinkSub
+    trajectory_obj.Edge = (obj, subelement)
+
+    # Find parent body in assembly and store it (if applicable)
+    for parent in obj.Parents:
+        if parent[0].Name == 'Assembly':
+            body_name = parent[1].split('.')[0]
+            trajectory_obj.Body = FreeCAD.ActiveDocument.getObject(body_name)
+            break
+
+    print("Edge selected for trajectory. Points will be computed during solve.")
+
+# ---------------------------------------------------------------------------
+# New helper function: compute trajectory points from the stored edge.
+def computeTrajectoryPoints(trajectory_obj):
+    if not trajectory_obj.Edge:
+         print("Error: No edge stored in the trajectory object!")
+         return []
+    
+    # Retrieve the stored reference (object and subelement name)
+    obj, subelement = trajectory_obj.Edge
+    edge_candidate = obj.getSubObject(subelement)
+    
+    # If getSubObject returns a tuple, take the first element.
+    if isinstance(edge_candidate, tuple):
+         edge = edge_candidate[0]
+    else:
+         edge = edge_candidate
+         
+    if not edge:
+         print("Error: Could not retrieve edge from stored reference.")
+         return []
+    
+    # Use the stored Body (if available) for the transformation; otherwise assume identity
+    if trajectory_obj.Body:
+         body = trajectory_obj.Body
+         o_A_ol = body.Placement.Matrix
+    else:
+         o_A_ol = FreeCAD.Matrix()
+    
+    # Determine the number of points based on the edge length
+    n_points = trajectory_obj.NumberOfPoints
+    trajectory_obj.DistanceBetweenPoints = edge.Length/n_points
+    if n_points < 2:
+         n_points = 2  # Ensure at least two points
+
+    # Discretize based on the edge type
+    if isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
+         start = edge.Vertexes[0].Point
+         end = edge.Vertexes[-1].Point
+         points_local = [start + (end - start) * i/(n_points-1) for i in range(n_points)]
+    else:
+         points_local = edge.discretize(Number=n_points)
+
+    # Transform points to global coordinates using the body's placement
+    points_global = [o_A_ol.multVec(point) for point in points_local]
+    trajectory_obj.Points = points_global
+
+    print(f"Computed {len(points_global)} trajectory points.")
+    return points_global
 
 
+# ---------------------------------------------------------------------------
+# Command to solve the trajectory (compute points and then inverse kinematics)
 class SolveTrajectoryCommand:
     def GetResources(self):
         return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'solve.svg'), 
                 'MenuText': 'Solve Trajectory', 
-                'ToolTip': 'Solve inverse kinematics for chosen line'}
+                'ToolTip': 'Solve inverse kinematics for chosen trajectory'}
 
     def Activated(self):
         robot = get_robot()
         sel = FreeCADGui.Selection.getSelection()[0]
+        
+        # Compute the trajectory points from the stored edge
+        points = computeTrajectoryPoints(sel)
+        if not points:
+            print("No trajectory points computed!")
+            return
+
         angles = []
-        for point in sel.Points:
+        for point in points:
             solve_ik(point)
             angles.append(robot.Angles)
             
         sel.Angles = angles
+        print("Trajectory solved and angles stored.")
 
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()[0]
@@ -116,8 +212,8 @@ class SolveTrajectoryCommand:
 
 FreeCADGui.addCommand('SolveTrajectoryCommand', SolveTrajectoryCommand())
 
-
-
+# ---------------------------------------------------------------------------
+# Command to play the trajectory animation.
 class PlayTrajectoryCommand:
     def GetResources(self):
         return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'play.svg'),
@@ -135,7 +231,7 @@ class PlayTrajectoryCommand:
             print("No angles calculated!")
             return
 
-        # Initialize timer if not exists
+        # Initialize timer if it does not exist
         if not animation_timer:
             animation_timer = QtCore.QTimer()
             animation_timer.timeout.connect(self.update_animation)
@@ -146,7 +242,8 @@ class PlayTrajectoryCommand:
             self.update_robot_position(sel.Angles[0])
 
         animation_state = "playing"
-        delay = int(1000 / sel.Velocity)
+        # Use DistanceBetweenPoints and Velocity to compute the delay in ms.
+        delay = int((sel.DistanceBetweenPoints / sel.Velocity) * 1000)
         animation_timer.start(delay)
 
     def update_animation(self):
@@ -176,6 +273,7 @@ class PlayTrajectoryCommand:
         sel = FreeCADGui.Selection.getSelection()[0] if FreeCADGui.Selection.getSelection() else None
         return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory' 
                    and animation_state != "playing" and sel.Angles)
+
 
 class PauseTrajectoryCommand:
     def GetResources(self):
@@ -216,57 +314,7 @@ class StopTrajectoryCommand:
     def IsActive(self):
         return animation_state in ["playing", "paused"]
 
-# Register commands
+# Register animation commands
 FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())
 FreeCADGui.addCommand('PauseTrajectoryCommand', PauseTrajectoryCommand())
 FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
-
-
-
-
-
-def selectLinePoints(trajectory_obj):
-    selection = FreeCADGui.Selection.getSelectionEx()
-    
-    if not selection or not selection[0].SubElementNames:
-        print("Error: No selection or invalid selection.")
-        return
-
-    sel = selection[0]
-    subelement = sel.SubElementNames[0]
-    
-    if not subelement.startswith('Edge'):
-        print("Error: Please select an edge.")
-        return
-
-    obj = sel.Object
-    edge = obj.getSubObject(subelement)
-    
-    if not edge:
-        print("Error: Could not retrieve the selected edge.")
-        return
-
-    # Store the edge reference using PropertyLinkSub
-    trajectory_obj.Edge = (obj, subelement)
-
-    # Find parent body in assembly
-    for parent in obj.Parents:
-        if parent[0].Name == 'Assembly':
-            body_name = parent[1].split('.')[0]
-            trajectory_obj.Body = FreeCAD.ActiveDocument.getObject(body_name)
-            o_A_ol = trajectory_obj.Body.Placement.Matrix
-
-    # Calculate points
-    n_points = round(edge.Length)
-    if isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
-        start = edge.Vertexes[0].Point
-        end = edge.Vertexes[-1].Point
-        points_local = [start + (end - start) * i/(n_points-1) for i in range(n_points)]
-    else:
-        points_local = edge.discretize(Number=n_points)
-
-    # Transform points to global coordinates
-    points_global = [o_A_ol.multVec(point) for point in points_local]
-    trajectory_obj.Points = points_global
-
-    print(f"Generated {len(points_global)} trajectory points:")

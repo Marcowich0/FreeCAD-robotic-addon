@@ -2,6 +2,7 @@ import FreeCAD
 import FreeCADGui
 from PySide import QtCore, QtGui
 import os
+import numpy as np
 from main_utils import get_robot  # Assumes this function exists and returns the robot object
 
 from inverse_kinematics import solve_ik
@@ -88,12 +89,8 @@ class RobotEndEffectorDialog(QtGui.QDialog):
         Adjust the end effector position by the given deltas and call solve_ik().
         """
         # Get the current position of the end effector.
-        current_pos = self.robot_obj.EndEffectorGlobal  # Assumed to be a FreeCAD.Vector
-        
-        # Compute the new position.
-        new_pos = FreeCAD.Vector(current_pos.x + dx,
-                                 current_pos.y + dy,
-                                 current_pos.z + dz)
+        current_pos = self.robot_obj.DHTransformations[-1][:3, 3]
+        new_pos = current_pos + np.array([dx, dy, dz])
         
         # Call the inverse kinematics solver to move the robot.
         solve_ik(new_pos)

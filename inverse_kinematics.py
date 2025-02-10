@@ -74,7 +74,9 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
     
     for iteration in range(max_iterations):
         current_pos = (robot.DHTransformations[-1] @ np.array([0, 0, 0, 1]))[:3]
-        delta_x_position = vec_to_numpy(target_pos) - current_pos
+        if not isinstance(target_pos, np.ndarray):
+            target_pos = vec_to_numpy(target_pos)
+        delta_x_position = target_pos - current_pos
 
         # Initialize error components
         position_error = np.linalg.norm(delta_x_position)

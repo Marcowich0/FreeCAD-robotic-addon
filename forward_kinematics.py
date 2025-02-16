@@ -2,7 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from main_utils import get_robot, updateGlobalEndEffector, vec_to_numpy
+from main_utils import get_robot, vec_to_numpy
 from main_utils import mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation
 import numpy as np
 import sympy as sp
@@ -139,7 +139,6 @@ def InitializeCoordinateSystems():
     createDHCoordinateSystems()
     updateDHTransformations()
     positionDHCoordinateSystems()
-    updateJacobian()
 
 
 
@@ -215,25 +214,6 @@ def defineEndEffector():
                 positionDHCoordinateSystems()
 
     robot.Angles = old_angles
-
-
-
-
-
-##################################################################################################
-
-def updateJacobian():
-    robot = get_robot()
-    T_arr = robot.DHTransformations
-    Jac = []
-    On = T_arr[-1][0:3, 3]
-    for i in range(1, len(T_arr)):
-        Zi = T_arr[i-1][0:3, 2]
-        Oi = T_arr[i-1][0:3, 3]
-        Jv = np.cross( Zi , (On - Oi)  )
-        Jw = Zi
-        Jac.append([*Jv, *Jw])
-    robot.Jacobian = np.array(Jac).T
 
 
 

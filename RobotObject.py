@@ -2,7 +2,8 @@ import FreeCAD
 import FreeCADGui
 import os
 import re
-from forward_kinematics import InitializeCoordinateSystems, positionBodies, updateJacobian, positionDHCoordinateSystems, updateDHTransformations
+from forward_kinematics import InitializeCoordinateSystems, positionBodies, positionDHCoordinateSystems, updateDHTransformations
+from dynamics import updateMomentOfInertia, updateJacobian, updateJacobianCenter, defineCenterOffMass
 from main_utils import get_robot
 import numpy as np
 import sympy as sp
@@ -13,7 +14,7 @@ class RobotObject:
         obj.Proxy = self
         
         obj.addProperty("App::PropertyLinkList", "Constraints", "Robot", "List of links").Constraints = []
-        obj.addProperty("App::PropertyLinkList", "Bodies", "Robot", "List of bodies").Bodies = []
+        #obj.addProperty("App::PropertyLinkList", "Bodies", "Robot", "List of bodies").Bodies = []
         obj.addProperty("App::PropertyIntegerList", "Edges", "Robot", "List of edges").Edges = []
         
         obj.addProperty("App::PropertyLinkList", "PrevBodies", "Robot", "List of previous bodies").PrevBodies = []
@@ -31,10 +32,14 @@ class RobotObject:
         obj.addProperty("App::PropertyLinkList", "DHCoordinateSystems", "Robot", "DH Coordinate Systems").DHCoordinateSystems = []
         obj.addProperty("App::PropertyPythonObject", "DHTransformations", "Robot", "List of numpy transforms").DHTransformations = []
         obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
+        obj.addProperty("App::PropertyPythonObject", "JacobianCenter", "Robot", "Jacobian matrix").JacobianCenter = None
+        obj.addProperty("App::PropertyPythonObject", "InertiaMatrices", "Robot", "Inertia matrices").InertiaMatrices = []
+        obj.addProperty("App::PropertyPythonObject", "CenterOfMass", "Robot", "Center of mass").CenterOfMass = []
+        obj.addProperty("App::PropertyFloatList", "Masses", "Robot", "Masses of the links").Masses = []
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
         obj.setEditorMode("Type", 1)  # Make the property read-only
-        obj.setEditorMode("Bodies", 1)  # Make the property read-only
+        #obj.setEditorMode("Bodies", 1)  # Make the property read-only
 
         obj.setEditorMode("PrevBodies", 2)  # Make the property invisible
         obj.setEditorMode("PrevEdges", 2)  # Make the property invisible
@@ -54,7 +59,6 @@ class RobotObject:
                 updateJacobian()
             
                 
-
 
 
 class RobotViewProvider:
@@ -133,6 +137,10 @@ def initialize_robot():
 
     connectRobotToAssembly()
     InitializeCoordinateSystems()
+    defineCenterOffMass()
+    updateJacobian()
+    updateJacobianCenter()
+    updateMomentOfInertia()
 
     return robot_obj
 
@@ -238,7 +246,7 @@ def connectRobotToAssembly():
     link_arr.pop(0) # Remove the grounded joint (Is not a motor)
 
     robot.Constraints = [link.Joint for link in link_arr]
-    robot.Bodies = [link.Body for link in link_arr]
+    #robot.Bodies = [link.Body for link in link_arr]
     robot.Edges = [link.Edge for link in link_arr]
     robot.Angles = [0 for _ in link_arr]
     robot.AngleOffsets = [0 for _ in link_arr]

@@ -35,6 +35,12 @@ def np_rotation(angle, axis):
                          [0, 0, 1, 0],
                          [0, 0, 0, 1]])
     
+def np_translation(x, y, z):
+    return np.array([[1, 0, 0, x],
+                     [0, 1, 0, y],
+                     [0, 0, 1, z],
+                     [0, 0, 0, 1]])
+
 
 def vec_to_numpy(v):
     # Assumes v has attributes x, y, z.
@@ -46,8 +52,6 @@ def updateGlobalEndEffector():
     if robot.NumpyTransformations:
         T_last = robot.NumpyTransformations[-1](*[float(angle/180*np.pi) for angle in robot.Angles])
         robot.EndEffectorGlobal = (float(T_last[0, 3]), float(T_last[1, 3]), float(T_last[2, 3]))
-
-
 
 
 def currentSelectionType():
@@ -66,3 +70,19 @@ def currentSelectionType():
         return sel.Type
     except:
         return None
+    
+
+def displayMatrix(matrix):
+    print("---------------------------------")
+    
+    # Process matrix: round values and replace near-zero values with 0
+    processed_matrix = [[0 if abs(x) < 1e-10 else round(float(x), 3) for x in row] for row in matrix]
+    
+    # Determine column widths
+    col_widths = [max(len(f"{col:.3f}") for col in col) for col in zip(*processed_matrix)]
+
+    # Print formatted matrix with aligned columns
+    for row in processed_matrix:
+        formatted_row = "  ".join(f"{val:>{width}.3f}" for val, width in zip(row, col_widths))
+        print(formatted_row)
+    print("---------------------------------")

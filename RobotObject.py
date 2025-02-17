@@ -3,7 +3,7 @@ import FreeCADGui
 import os
 import re
 from forward_kinematics import InitializeCoordinateSystems, positionBodies, positionDHCoordinateSystems, updateDHTransformations
-from dynamics import updateMomentOfInertia, updateJacobian, updateJacobianCenter, defineCenterOffMass
+from dynamics import updateMomentOfInertia, updateJacobian, updateJacobianCenter, defineCenterOffMass, computeJointTorques, defineSympyTransformations, defineSympyJacobian, defineTauSympy
 from main_utils import get_robot
 import numpy as np
 import sympy as sp
@@ -14,10 +14,8 @@ class RobotObject:
         obj.Proxy = self
         
         obj.addProperty("App::PropertyLinkList", "Constraints", "Robot", "List of links").Constraints = []
-        #obj.addProperty("App::PropertyLinkList", "Bodies", "Robot", "List of bodies").Bodies = []
-        obj.addProperty("App::PropertyIntegerList", "Edges", "Robot", "List of edges").Edges = []
         
-        obj.addProperty("App::PropertyLinkList", "PrevBodies", "Robot", "List of previous bodies").PrevBodies = []
+        obj.addProperty("App::PropertyIntegerList", "Edges", "Robot", "List of edges").Edges = []
         obj.addProperty("App::PropertyIntegerList", "PrevEdges", "Robot", "List of previous edges").PrevEdges = []
         
         obj.addProperty("App::PropertyFloatList", "Angles", "Robot", "List of angles").Angles = []
@@ -37,11 +35,15 @@ class RobotObject:
         obj.addProperty("App::PropertyPythonObject", "CenterOfMass", "Robot", "Center of mass").CenterOfMass = []
         obj.addProperty("App::PropertyFloatList", "Masses", "Robot", "Masses of the links").Masses = []
 
-        obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
-        obj.setEditorMode("Type", 1)  # Make the property read-only
-        #obj.setEditorMode("Bodies", 1)  # Make the property read-only
 
-        obj.setEditorMode("PrevBodies", 2)  # Make the property invisible
+        obj.addProperty("App::PropertyPythonObject", "DHTransformationsSympy", "Robot", "List of numpy transforms").DHTransformationsSympy = []
+        obj.addProperty("App::PropertyPythonObject", "VariablesSympy", "Robot", "List of sympy variables").VariablesSympy = []
+        obj.addProperty("App::PropertyPythonObject", "JacobianCenterSympy", "Robot", "End effector position").JacobianCenterSympy = []
+        obj.addProperty("App::PropertyPythonObject", "TauSympy", "Robot", "End effector position").TauSympy = None
+
+        obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
+
+        obj.setEditorMode("Type", 1)  # Make the property read-only
         obj.setEditorMode("PrevEdges", 2)  # Make the property invisible
         
 
@@ -120,6 +122,8 @@ class CreateRobotCommand:
 FreeCADGui.addCommand('CreateRobotCommand', CreateRobotCommand())
 
 
+import threading
+
 def initialize_robot():
     """Directly initialize the robot object in the active document."""
     doc = FreeCAD.ActiveDocument
@@ -142,10 +146,30 @@ def initialize_robot():
     updateJacobianCenter()
     updateMomentOfInertia()
 
+
+    t = threading.Thread(target=thread_sympy)
+    t.start()
+
+    #defineTauSympy()
+
+    #q = [0 for _ in robot_obj.Angles]
+    #q_dot = [0 for _ in robot_obj.Angles]
+    #q_ddot = [0 for _ in robot_obj.Angles]
+    #robot_obj.TauSympy(*q, *q_dot, *q_ddot)
+
+
     return robot_obj
 
 
-
+def thread_sympy():
+    robot = get_robot()
+    defineSympyTransformations()
+    defineSympyJacobian()
+    defineTauSympy()
+    q = [0 for _ in robot.Angles]
+    q_dot = [0 for _ in robot.Angles]
+    q_ddot = [0 for _ in robot.Angles]
+    robot.TauSympy(*q, *q_dot, *q_ddot)
 
 # ----------------- Adding the GUI Button to remove robot -----------------
 
@@ -246,11 +270,9 @@ def connectRobotToAssembly():
     link_arr.pop(0) # Remove the grounded joint (Is not a motor)
 
     robot.Constraints = [link.Joint for link in link_arr]
-    #robot.Bodies = [link.Body for link in link_arr]
     robot.Edges = [link.Edge for link in link_arr]
     robot.Angles = [0 for _ in link_arr]
     robot.AngleOffsets = [0 for _ in link_arr]
-    robot.PrevBodies = [link.Body for link in link_prev_arr]
     robot.PrevEdges = [link.Edge for link in link_prev_arr]
 
 

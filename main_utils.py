@@ -42,9 +42,12 @@ def np_translation(x, y, z):
                      [0, 0, 0, 1]])
 
 
-def vec_to_numpy(v):
+def vec_to_numpy(v, n=3):
     # Assumes v has attributes x, y, z.
-    return np.array([v.x, v.y, v.z])
+    if n == 3:
+        return np.array([v.x, v.y, v.z])
+    elif n == 4:
+        return np.array([v.x, v.y, v.z, 1])
 
 
 def updateGlobalEndEffector():

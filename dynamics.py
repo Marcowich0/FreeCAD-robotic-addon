@@ -159,9 +159,6 @@ def defineTauSympy():
     q_ddot_sym = [sp.symbols(f"q_ddot_{i+1}") for i, _ in enumerate(robot.Links[1:])]
 
     N = len(robot.Links)-1
-    #q_substititions = {theta: q_val for theta, q_val in zip(q_sym, q)}
-    #q_dot_substititions = {theta: q_dot_val for theta, q_dot_val in zip(q_sym, q_dot)}
-    #q_ddot_substititions = {theta: q_ddot_val for theta, q_ddot_val in zip(q_sym, q_ddot)}
 
     m = robot.Masses
     g = sp.Matrix([0, 0, -9.81])
@@ -181,16 +178,13 @@ def defineTauSympy():
         for j in range(N):
             C[k,j] = sum(1/2 * (D[k,j].diff(q_sym[i]) + D[k,i].diff(q_sym[j]) - D[i,j].diff(q_sym[k])) * q_dot_sym[i] for i in range(N))
             print(f"Progress of C: {k*N+j}/{N*N}")
-            
-    #print("Substituting values")
-    #g_val = g_vec.subs(q_substititions)
-    #C_val = C.subs(q_substititions).subs(q_dot_substititions)
-    #D_val = D.subs(q_substititions)
+    
 
     tau = D * sp.Matrix(q_ddot_sym) + C * sp.Matrix(q_dot_sym) + g_vec
-    all_vars = list(q_sym) + list(q_dot_sym) + list(q_ddot_sym)
-    tau_func = sp.lambdify(all_vars, tau, modules="numpy")
-    robot.tau = tau_func
+   
+    print("Saving tau function")
+    robot.TauSympy = tau
+    print("Done")
 
     
 

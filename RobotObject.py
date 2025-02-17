@@ -169,7 +169,6 @@ def thread_sympy():
     q = [0 for _ in robot.Angles]
     q_dot = [0 for _ in robot.Angles]
     q_ddot = [0 for _ in robot.Angles]
-    robot.TauSympy(*q, *q_dot, *q_ddot)
 
 # ----------------- Adding the GUI Button to remove robot -----------------
 

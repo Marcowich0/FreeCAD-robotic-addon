@@ -77,7 +77,11 @@ def currentSelectionType():
 
 def displayMatrix(matrix):
     print("---------------------------------")
-    
+
+    # Ensure matrix is a 2D list or numpy array
+    if isinstance(matrix, (list, np.ndarray)) and not isinstance(matrix[0], (list, np.ndarray)):
+        matrix = [matrix]  # Convert 1D array to a list of lists
+
     # Process matrix: round values and replace near-zero values with 0
     processed_matrix = [[0 if abs(x) < 1e-10 else round(float(x), 3) for x in row] for row in matrix]
     
@@ -88,4 +92,5 @@ def displayMatrix(matrix):
     for row in processed_matrix:
         formatted_row = "  ".join(f"{val:>{width}.3f}" for val, width in zip(row, col_widths))
         print(formatted_row)
+
     print("---------------------------------")

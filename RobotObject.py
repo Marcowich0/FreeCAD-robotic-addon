@@ -36,6 +36,9 @@ class RobotObject:
         obj.addProperty("App::PropertyFloatList", "Masses", "Robot", "Masses of the links").Masses = []
 
 
+        obj.addProperty("App::PropertyPythonObject", "DHTransformationsLambdified", "Robot", "List of lambdified transforms").DHTransformationsLambdified = []
+        obj.addProperty("App::PropertyPythonObject", "JacobianCenterLambdified", "Robot", "Jacobian matrix").JacobianCenterLambdified = None
+
         obj.addProperty("App::PropertyPythonObject", "DHTransformationsSympy", "Robot", "List of numpy transforms").DHTransformationsSympy = []
         obj.addProperty("App::PropertyPythonObject", "VariablesSympy", "Robot", "List of sympy variables").VariablesSympy = []
         obj.addProperty("App::PropertyPythonObject", "JacobianCenterSympy", "Robot", "End effector position").JacobianCenterSympy = []
@@ -165,10 +168,12 @@ def thread_sympy():
     robot = get_robot()
     defineSympyTransformations()
     defineSympyJacobian()
-    defineTauSympy()
+    #defineTauSympy()
     q = [0 for _ in robot.Angles]
-    q_dot = [0 for _ in robot.Angles]
-    q_ddot = [0 for _ in robot.Angles]
+    q_dot = [1 for _ in robot.Angles]
+    q_ddot = [0.1 for _ in robot.Angles]
+
+    computeJointTorques(q, q_dot, q_ddot)
 
 # ----------------- Adding the GUI Button to remove robot -----------------
 

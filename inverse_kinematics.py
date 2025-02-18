@@ -2,6 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 from main_utils import get_robot, vec_to_numpy
+from secondary_utils import checkCollision
 from forward_kinematics import getDHTransformations, getJacobian
 import numpy as np
 import math
@@ -54,7 +55,7 @@ FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 
 
-def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orientation_weight=1.0):
+def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orientation_weight=1.0):
     """
     Solves inverse kinematics to reach target position and optionally align with target direction.
     
@@ -103,12 +104,16 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
         # Calculate total error
         total_error = np.linalg.norm(delta_x)
         if total_error < tolerance:
-            FreeCAD.Console.PrintMessage(
-                f"IK converged after {iteration+1} iterations\n"
-                f"Position error: {position_error:.2f} mm"
-                + (f", Orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
-            )
-            return True
+            if checkCollision():
+               robot.Angles = [np.random.uniform(-180, 180) for _ in range(len(robot.Angles))]
+
+            else:
+                FreeCAD.Console.PrintMessage(
+                    f"IK converged after {iteration+1} iterations\n"
+                    f"Position error: {position_error:.2f} mm"
+                    + (f", Orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
+                )
+                return True
 
         # Convert current angles to radians for calculations
         current_angles_rad = np.array([math.radians(a) for a in robot.Angles])
@@ -143,5 +148,6 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
         f"Final position error: {position_error:.2f} mm"
         + (f", orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
     )
+
     return False
 

@@ -137,7 +137,6 @@ def InitializeCoordinateSystems():
     CreateLocalDHCoordinateSystems()
     findDHPeremeters()
     createDHCoordinateSystems()
-    updateDHTransformations()
     positionDHCoordinateSystems()
 
 
@@ -210,7 +209,6 @@ def defineEndEffector():
                 robot.EndEffector = first_subobj.Point
                 robot.DHLocalCoordinateSystems[-1].Placement.Base = first_subobj.Point
                 findDHPeremeters()
-                updateDHTransformations()
                 positionDHCoordinateSystems()
 
     robot.Angles = old_angles
@@ -235,7 +233,7 @@ def findDHPeremeters():
         o_A_current = mat_to_numpy(current_body.Placement.Matrix)
         current_A_dh2 = mat_to_numpy(current_lcs.Placement.Matrix)
         dh1_A_dh2 = np.linalg.inv(last_A_dh1) @ np.linalg.inv(o_A_last) @ o_A_current @ current_A_dh2
-        dh1_A_dh2 = np.round(dh1_A_dh2, 10)
+        dh1_A_dh2 = np.round(dh1_A_dh2, 9)
         
         d = dh1_A_dh2[2, 3]
         a = dh1_A_dh2[0, 3]
@@ -260,35 +258,70 @@ def createDHCoordinateSystems():
     robot.DHCoordinateSystems = dh_coordinate_systems
 
 
-def updateDHTransformations():
+def getDHTransformations(q = None, SI = False):
     robot = get_robot()
+    q = q if q is not None else np.deg2rad(robot.Angles)
     last = None
     trans = [ mat_to_numpy(robot.Links[0].Placement.Matrix) @ mat_to_numpy(robot.DHCoordinateSystems[0].Placement.Matrix)]
-    for dh_perameters, theta in zip(robot.DHPerameters, robot.Angles):
+    for dh_perameters, theta in zip(robot.DHPerameters, q):
         _ , d, a, alpha = dh_perameters
-        theta = np.deg2rad(theta)
+        d, a = (d/1000, a/1000) if SI else (d, a)
         dh_trans = np.array([[np.cos(theta), -np.sin(theta)*np.cos(alpha), np.sin(theta)*np.sin(alpha), a*np.cos(theta)],
                              [np.sin(theta), np.cos(theta)*np.cos(alpha), -np.cos(theta)*np.sin(alpha), a*np.sin(theta)],
                              [0, np.sin(alpha), np.cos(alpha), d],
                              [0, 0, 0, 1]])
         last = last @ dh_trans if last is not None else dh_trans
         trans.append(last)
-    robot.DHTransformations = trans
+    return trans
 
 
 def positionDHCoordinateSystems():
     robot = get_robot()
-    for transformation, dh_coordinate in zip(robot.DHTransformations[1:], robot.DHCoordinateSystems[1:]):
+    T_arr = getDHTransformations(q = np.deg2rad(robot.Angles), SI = False)
+    for transformation, dh_coordinate in zip(T_arr[1:], robot.DHCoordinateSystems[1:]):
         dh_coordinate.Placement.Matrix = numpy_to_mat(transformation)
 
 
-        
-    
+
+def getJacobian(q = None, SI = False):
+    robot = get_robot()
+    q = q if q is not None else np.deg2rad(robot.Angles)
+    T_arr = getDHTransformations(q, SI)
+    Jac = []
+    On = T_arr[-1][0:3, 3]
+    for i in range(1, len(T_arr)):
+        Zi = T_arr[i-1][0:3, 2]
+        Oi = T_arr[i-1][0:3, 3]
+        Jv = np.cross( Zi , (On - Oi)  )
+        Jw = Zi
+        Jac.append([*Jv, *Jw])
+    return np.array(Jac).T
 
 
+def getJacobianCenter(q = None, SI = False):
+    robot = get_robot()
+    q = q if q is not None else np.deg2rad(robot.Angles)
+    T_arr = getDHTransformations(q, SI)
+    Jac_arr = []
+    for i in range(1, len(T_arr)):
+        Jac = []
+        On = (T_arr[i] @ np.array([ *robot.CenterOfMass[i] , 1 ]))[:3]
 
+        for j in range(1, len(T_arr)):
+            if j <= i:
+                Zi = T_arr[j-1][0:3, 2]
+                Oi = T_arr[j-1][0:3, 3]
 
+                Jv = np.cross(Zi,(On - Oi))
+                Jw = Zi
+            else:
+                Jv = sp.Matrix([0,0,0])
+                Jw = sp.Matrix([0,0,0])
+            
+            Jac.append([*Jv, *Jw])
+        Jac_arr.append(np.array(Jac).T)
 
+    return Jac_arr
 
 ######################################################################################################
 

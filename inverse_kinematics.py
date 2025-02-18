@@ -2,6 +2,7 @@ import FreeCAD
 import FreeCADGui
 import os
 from main_utils import get_robot, vec_to_numpy
+from forward_kinematics import getDHTransformations, getJacobian
 import numpy as np
 import math
 
@@ -73,7 +74,9 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
     target_active = abs(target_dir.Length - 1) < 1e-4
     
     for iteration in range(max_iterations):
-        current_pos = (robot.DHTransformations[-1] @ np.array([0, 0, 0, 1]))[:3]
+        q = np.deg2rad(robot.Angles)
+        T_arr = getDHTransformations(q)
+        current_pos = (T_arr[-1] @ np.array([0, 0, 0, 1]))[:3]
         if not isinstance(target_pos, np.ndarray):
             target_pos = vec_to_numpy(target_pos)
         delta_x_position = target_pos - current_pos
@@ -85,7 +88,7 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
         # Calculate orientation components if target_dir is specified
         if target_active:
             
-            current_dir = robot.DHTransformations[-1][:3, 2]
+            current_dir = T_arr[-1][:3, 2]
             
             # Calculate orientation error using cross product
             orientation_error_vec = np.cross(current_dir, target_dir)
@@ -111,7 +114,7 @@ def solve_ik(target_pos, max_iterations=1000, tolerance=0.1, damping=0.1, orient
         current_angles_rad = np.array([math.radians(a) for a in robot.Angles])
         
         # Calculate Jacobian at current position
-        J_full = robot.Jacobian
+        J_full = getJacobian(q, SI = False)
         
         # Select appropriate Jacobian based on orientation solving
         J = J_full if target_active else J_full[:3, :]

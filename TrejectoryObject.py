@@ -2,10 +2,9 @@
 import FreeCAD
 import FreeCADGui
 import Part
-import time
 import os
-
-# Add these imports at the top
+from dynamics import computeJointTorques
+import numpy as np
 from PySide import QtCore
 import threading
 
@@ -319,10 +318,6 @@ FreeCADGui.addCommand('PauseTrajectoryCommand', PauseTrajectoryCommand())
 FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 
 
-
-from secondary_utils import partial_derivative
-from dynamics import computeJointTorques
-import numpy as np
 
 def solvePath():
     robot = get_robot()

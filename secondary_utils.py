@@ -7,10 +7,6 @@ def checkCollision():
     intersect = False
     # Iterate over every unique pair of links
     for link_a, link_b in itertools.combinations(links, 2):
-        # If necessary, use global placements; for example:
-        # shape_a = link_a.Shape.copy()
-        # shape_a.Placement = link_a.getGlobalPlacement()  
-        # Otherwise, use the local shape:
         shape_a = link_a.Shape
         shape_b = link_b.Shape
 
@@ -22,3 +18,14 @@ def checkCollision():
         except Exception as e:
             pass
     return intersect
+
+
+
+
+def partial_derivative(f, q, i, h=1e-6):
+    q_plus = q.copy()
+    q_minus = q.copy()
+    q_plus[i] += h
+    q_minus[i] -= h
+    return (f(q_plus) - f(q_minus)) / (2 * h)    
+

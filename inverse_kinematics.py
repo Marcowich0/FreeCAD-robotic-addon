@@ -73,13 +73,16 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
     robot = get_robot()
     target_dir = robot.EndEffectorOrientation
     target_active = abs(target_dir.Length - 1) < 1e-4
-    
+    q = np.deg2rad(robot.Angles)
+
+    if not isinstance(target_pos, np.ndarray):
+        target_pos = vec_to_numpy(target_pos)
+        
     for iteration in range(max_iterations):
-        q = np.deg2rad(robot.Angles)
+        
         T_arr = getDHTransformations(q)
         current_pos = (T_arr[-1] @ np.array([0, 0, 0, 1]))[:3]
-        if not isinstance(target_pos, np.ndarray):
-            target_pos = vec_to_numpy(target_pos)
+
         delta_x_position = target_pos - current_pos
 
         # Initialize error components
@@ -104,8 +107,10 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
         # Calculate total error
         total_error = np.linalg.norm(delta_x)
         if total_error < tolerance:
+            robot.Angles = [*np.rad2deg(q)]
+            FreeCAD.ActiveDocument.recompute()
             if checkCollision():
-               robot.Angles = [np.random.uniform(-180, 180) for _ in range(len(robot.Angles))]
+               q = [np.random.uniform(-np.pi, np.pi) for _ in range(len(q))]
 
             else:
                 FreeCAD.Console.PrintMessage(
@@ -114,9 +119,6 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
                     + (f", Orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
                 )
                 return True
-
-        # Convert current angles to radians for calculations
-        current_angles_rad = np.array([math.radians(a) for a in robot.Angles])
         
         # Calculate Jacobian at current position
         J_full = getJacobian(q, SI = False)
@@ -133,15 +135,7 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
         
         # Calculate angle changes
         delta_theta_rad = J_pseudo @ delta_x
-        new_angles_rad = current_angles_rad + delta_theta_rad.flatten()
-        
-        # Convert back to degrees and normalize
-        new_angles_deg = [math.degrees(a) % 360 for a in new_angles_rad]
-        new_angles_deg = [(a + 180) % 360 - 180 for a in new_angles_deg]
-        
-        # Update robot angles
-        robot.Angles = new_angles_deg
-        FreeCAD.ActiveDocument.recompute()
+        q = q + delta_theta_rad.flatten()
 
     FreeCAD.Console.PrintWarning(
         f"IK failed to converge after {max_iterations} iterations\n"

@@ -1,4 +1,5 @@
 from main_utils import get_robot, vec_to_numpy, mat_to_numpy, numpy_to_mat, np_rotation, numpy_to_rotation, np_translation, displayMatrix
+from secondary_utils import partial_derivative
 from forward_kinematics import getDHTransformations, getJacobianCenter
 import numpy as np
 import sympy as sp
@@ -73,13 +74,6 @@ def computeJointTorques(q=None, q_dot=None, q_ddot = None):
     gravity = np.array([0, 0, -9.81])
     M = robot.Masses
 
-    def partial_derivative(f, q, i, h=1e-6):
-        q_plus = q.copy()
-        q_minus = q.copy()
-        q_plus[i] += h
-        q_minus[i] -= h
-        return (f(q_plus) - f(q_minus)) / (2 * h)    
-
     def D(q):
         Jac_center_full = getJacobianCenter(q, SI=True)
         Jac_vci = [jac[:3,:] for jac in Jac_center_full]
@@ -108,15 +102,16 @@ def computeJointTorques(q=None, q_dot=None, q_ddot = None):
     C_mat = C(q, q_dot)
     D_mat = D(q)
 
-    print("Gravitational term")
-    displayMatrix(g_vec)
-    print("Dampening term")
-    displayMatrix(C_mat)
-    print("Mass term")
-    displayMatrix(D_mat)
     tau = D_mat @ q_ddot + C_mat @ q_dot + g_vec
-    print("Joint torques")
-    displayMatrix(tau)
+
+    #print("Gravitational term")
+    #displayMatrix(g_vec)
+    #print("Dampening term")
+    #displayMatrix(C_mat)
+    #print("Mass term")
+    #displayMatrix(D_mat)
+    #print("Joint torques")
+    #displayMatrix(tau)
 
     return tau
     

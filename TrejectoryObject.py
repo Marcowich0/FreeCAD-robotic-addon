@@ -27,13 +27,20 @@ class Trajectory:
         obj.addProperty("App::PropertyLinkSub", "Edge", "Trajectory", "Link to an Edge")
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
         obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 100
+
+        obj.addProperty("App::PropertyPythonObject", "t", "Time", "List of times at each point").t = []
         obj.addProperty("App::PropertyPythonObject", "Angles", "Trajectory", "List of angles").Angles = []
+        obj.addProperty("App::PropertyPythonObject", "q_dot", "Trajectory", "List of joint velocities").q_dot = []
+        obj.addProperty("App::PropertyPythonObject", "q_ddot", "Trajectory", "List of joint accelerations").q_ddot = []
+        obj.addProperty("App::PropertyPythonObject", "Torques", "Trajectory", "List of joint torques").Torques = []
+        
 
         obj.addProperty("App::PropertyInteger", "NumberOfPoints", "Trajectory", "Number of points").NumberOfPoints = 100
         obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 0.0
     
     def execute(self, obj):
         pass  # Recompute logic here
+
 
 # View provider with corrected name and added icon
 class ViewProviderTrajectory:
@@ -189,26 +196,18 @@ class SolveTrajectoryCommand:
                 'ToolTip': 'Solve inverse kinematics for chosen trajectory'}
 
     def Activated(self):
-        robot = get_robot()
-        sel = FreeCADGui.Selection.getSelection()[0]
-        
-        # Compute the trajectory points from the stored edge
-        points = computeTrajectoryPoints(sel)
-        if not points:
-            print("No trajectory points computed!")
-            return
+        solvePath()
+        import threading
+        thread = threading.Thread(target=solveDynamics)
+        thread.start()
 
-        angles = []
-        for point in points:
-            solve_ik(point)
-            angles.append(robot.Angles)
-            
-        sel.Angles = angles
-        print("Trajectory solved and angles stored.")
+        thread.join()
+        plotTorques()
 
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()[0]
         return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory')
+    
 
 FreeCADGui.addCommand('SolveTrajectoryCommand', SolveTrajectoryCommand())
 
@@ -318,3 +317,78 @@ class StopTrajectoryCommand:
 FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())
 FreeCADGui.addCommand('PauseTrajectoryCommand', PauseTrajectoryCommand())
 FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
+
+
+
+from secondary_utils import partial_derivative
+from dynamics import computeJointTorques
+import numpy as np
+
+def solvePath():
+    robot = get_robot()
+    sel = FreeCADGui.Selection.getSelection()[0]
+    
+    # Compute the trajectory points from the stored edge
+    points = computeTrajectoryPoints(sel)
+    if not points:
+        print("No trajectory points computed!")
+        return
+    angles = []
+    for point in points:
+        solve_ik(point)
+        angles.append(robot.Angles)
+    sel.Angles = angles
+        
+    time = [0, *[sel.DistanceBetweenPoints/sel.Velocity for _ in range(len(sel.Angles)-1)]]
+    sel.t = np.cumsum(time)
+    print("Trajectory solved and angles stored.")
+
+
+def solveDynamics():
+    updateVelocityAndAcceleration()
+    updateTorques()
+
+
+def updateVelocityAndAcceleration():
+    sel = FreeCADGui.Selection.getSelection()[0]
+    if not sel.Angles:
+        print("No angles calculated!")
+        return
+    
+    q = sel.Angles
+    q_dot = np.gradient(q, sel.t, axis=0)
+    q_ddot = np.gradient(q_dot, sel.t, axis=0)
+    sel.q_dot = q_dot
+    sel.q_ddot = q_ddot
+    print(np.shape(q_dot), np.shape(q_ddot))
+    print("Velocity and acceleration updated.")
+
+
+def updateTorques():
+    sel = FreeCADGui.Selection.getSelection()[0]
+    q = np.deg2rad(sel.Angles)
+    q_dot = sel.q_dot
+    q_ddot = sel.q_ddot
+    tau = [computeJointTorques(q, q_dot, q_ddot) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
+    sel.Torques = tau
+
+
+def plotTorques():
+    import matplotlib.pyplot as plt
+    sel = FreeCADGui.Selection.getSelection()[0]
+
+    # Use dark background style as a base
+    plt.style.use('dark_background')
+
+    # Override the facecolors to a dark gray
+    dark_gray = '#303030'
+    plt.rcParams['axes.facecolor'] = dark_gray
+    plt.rcParams['figure.facecolor'] = dark_gray
+
+    plt.plot(sel.t, sel.Torques)
+    plt.grid(True, color='gray')  # Ensure grid lines are visible
+    plt.legend([f"Joint {i}" for i in range(len(sel.Torques[0]))])
+    plt.xlabel("Time (s)")
+    plt.ylabel("Torque (Nm)")
+    plt.show()
+

@@ -35,10 +35,7 @@ FreeCADGui.addCommand('testCommand', testCommand())
 def CreateLocalDHCoordinateSystems():
     doc, robot = FreeCAD.ActiveDocument, get_robot()
     edges = robot.PrevEdges
-    last = np.array([[1,0,0,0],
-                    [0,1,0,0],
-                    [0,0,1,0],
-                    [0,0,0,1]])
+    last = np.eye(4)
     local_dh_coordinate_systems = []
     for i, link in enumerate(robot.Links):
         o_A_ol = mat_to_numpy(link.Placement.Matrix) 

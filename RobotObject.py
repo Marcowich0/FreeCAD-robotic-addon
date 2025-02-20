@@ -150,17 +150,8 @@ def initialize_robot():
 
 
 def thread_sympy():
-    robot = get_robot()
     defineCenterOffMass()
     updateMomentOfInertia()
-
-    #Testing
-    q = [0 for _ in robot.Angles]
-    q_dot = [1 for _ in robot.Angles]
-    q_ddot = [1 for _ in robot.Angles]
-
-    computeJointTorques(q, q_dot, q_ddot)
-
 
 # ----------------- Adding the GUI Button to remove robot -----------------
 

@@ -41,6 +41,7 @@ class Trajectory:
         pass  # Recompute logic here
 
 
+
 # View provider with corrected name and added icon
 class ViewProviderTrajectory:
     def __init__(self, vobj):
@@ -201,6 +202,7 @@ class SolveTrajectoryCommand:
         thread.start()
 
         thread.join()
+        print("Dynamics solved.")
         plotTorques()
 
     def IsActive(self):
@@ -320,7 +322,6 @@ FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 
 
 def solvePath():
-    robot = get_robot()
     sel = FreeCADGui.Selection.getSelection()[0]
     
     # Compute the trajectory points from the stored edge
@@ -330,8 +331,8 @@ def solvePath():
         return
     angles = []
     for point in points:
-        solve_ik(point)
-        angles.append(robot.Angles)
+        sol = solve_ik(point)
+        angles.append(sol)
     sel.Angles = angles
         
     time = [0, *[sel.DistanceBetweenPoints/sel.Velocity for _ in range(len(sel.Angles)-1)]]
@@ -355,7 +356,6 @@ def updateVelocityAndAcceleration():
     q_ddot = np.gradient(q_dot, sel.t, axis=0)
     sel.q_dot = q_dot
     sel.q_ddot = q_ddot
-    print(np.shape(q_dot), np.shape(q_ddot))
     print("Velocity and acceleration updated.")
 
 

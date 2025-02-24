@@ -55,7 +55,7 @@ FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 
 
-def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orientation_weight=1.0):
+def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orientation_weight=1.0, collision = True):
     """
     Solves inverse kinematics to reach target position and optionally align with target direction.
     
@@ -109,8 +109,8 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
         if total_error < tolerance:
             robot.Angles = [*np.rad2deg(q)]
             FreeCAD.ActiveDocument.recompute()
-            if checkCollision():
-               q = [np.random.uniform(-np.pi, np.pi) for _ in range(len(q))]
+            if collision and checkCollision():
+                q = [np.random.uniform(-np.pi, np.pi) for _ in range(len(q))]
 
             else:
                 FreeCAD.Console.PrintMessage(
@@ -118,7 +118,7 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
                     f"Position error: {position_error:.2f} mm"
                     + (f", Orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
                 )
-                return True
+                return [*np.rad2deg(q)]
         
         # Calculate Jacobian at current position
         J_full = getJacobian(q, SI = False)

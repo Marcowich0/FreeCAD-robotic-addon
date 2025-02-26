@@ -6,7 +6,6 @@ from forward_kinematics import InitializeCoordinateSystems, positionBodies, posi
 from dynamics import updateMomentOfInertia, defineCenterOffMass, computeJointTorques
 from main_utils import get_robot, displayMatrix
 import numpy as np
-import sympy as sp
 
 class RobotObject:
     def __init__(self, obj):
@@ -28,21 +27,10 @@ class RobotObject:
         obj.addProperty("App::PropertyPythonObject", "DHPerameters", "Robot", "DH parameters").DHPerameters = []
         obj.addProperty("App::PropertyLinkList", "DHLocalCoordinateSystems", "Robot", "DH Local Coordinate Systems").DHLocalCoordinateSystems = []
         obj.addProperty("App::PropertyLinkList", "DHCoordinateSystems", "Robot", "DH Coordinate Systems").DHCoordinateSystems = []
-        obj.addProperty("App::PropertyPythonObject", "DHTransformations", "Robot", "List of numpy transforms").DHTransformations = []
-        obj.addProperty("App::PropertyPythonObject", "Jacobian", "Robot", "Jacobian matrix").Jacobian = None
-        obj.addProperty("App::PropertyPythonObject", "JacobianCenter", "Robot", "Jacobian matrix").JacobianCenter = None
         obj.addProperty("App::PropertyPythonObject", "InertiaMatrices", "Robot", "Inertia matrices").InertiaMatrices = []
         obj.addProperty("App::PropertyPythonObject", "CenterOfMass", "Robot", "Center of mass").CenterOfMass = []
         obj.addProperty("App::PropertyFloatList", "Masses", "Robot", "Masses of the links").Masses = []
 
-
-        obj.addProperty("App::PropertyPythonObject", "DHTransformationsLambdified", "Robot", "List of lambdified transforms").DHTransformationsLambdified = []
-        obj.addProperty("App::PropertyPythonObject", "JacobianCenterLambdified", "Robot", "Jacobian matrix").JacobianCenterLambdified = []
-
-        obj.addProperty("App::PropertyPythonObject", "DHTransformationsSympy", "Robot", "List of numpy transforms").DHTransformationsSympy = []
-        obj.addProperty("App::PropertyPythonObject", "VariablesSympy", "Robot", "List of sympy variables").VariablesSympy = []
-        obj.addProperty("App::PropertyPythonObject", "JacobianCenterSympy", "Robot", "End effector position").JacobianCenterSympy = []
-        obj.addProperty("App::PropertyPythonObject", "TauSympy", "Robot", "End effector position").TauSympy = None
 
         obj.addProperty("App::PropertyString", "Type", "Base", "Type of the object").Type = "Robot"
 

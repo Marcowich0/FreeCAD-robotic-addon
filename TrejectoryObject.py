@@ -186,7 +186,9 @@ def computeTrajectoryPoints(trajectory_obj):
     print(f"Computed {len(points_global)} trajectory points.")
     return points_global
 
-
+import cProfile
+import pstats
+import threading
 # ---------------------------------------------------------------------------
 # Command to solve the trajectory (compute points and then inverse kinematics)
 class SolveTrajectoryCommand:
@@ -195,15 +197,44 @@ class SolveTrajectoryCommand:
                 'MenuText': 'Solve Trajectory', 
                 'ToolTip': 'Solve inverse kinematics for chosen trajectory'}
 
-    def Activated(self):
-        solvePath()
-        import threading
-        thread = threading.Thread(target=solveDynamics)
-        thread.start()
 
-        thread.join()
+
+    def Activated(self):
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        solvePath()
+        
+        solveDynamics()
+
         print("Dynamics solved.")
         plotTorques()
+
+        profiler.disable()
+
+        # Print profiling results to console (simplified)
+        stats = pstats.Stats(profiler)
+        stats.strip_dirs().sort_stats(pstats.SortKey.CUMULATIVE)
+        
+        # Explicitly sort the stats by cumulative time (stat index 3) in descending order.
+        sorted_stats = sorted(stats.stats.items(), key=lambda item: item[1][3], reverse=True)
+        
+        print("\nProfiling Results (Functions > 2 sec):")
+        
+        # Define a header format: left-align the function name and right-align the time.
+        header_format = "{:<60s} {:>10s}"
+        print(header_format.format("Function", "Time (sec)"))
+        print("-" * 72)
+        
+        # Each key in stats.stats is a tuple: (filename, line number, function name)
+        # stat[3] is the cumulative time.
+        for func, stat in sorted_stats:
+            cumulative_time = stat[3]
+            if cumulative_time > 2.0:
+                func_str = f"{func[2]} ({func[0]}:{func[1]})"
+                print(header_format.format(func_str, f"{cumulative_time:.2f}"))
+        
+        print("\nProfiling completed.")
 
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()[0]

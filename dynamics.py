@@ -74,21 +74,25 @@ def computeJointTorques(q=None, q_dot=None, q_ddot = None):
     gravity = np.array([0, 0, -9.81])
     M = robot.Masses
 
+
     def D(q):
-        Jac_center_full = getJacobianCenter(q, SI=True)
-        Jac_vci = [jac[:3,:] for jac in Jac_center_full]
-        Jac_wi = [jac[3:,:] for jac in Jac_center_full]
+        Jac_vci, Jac_wi = map(list, zip(*[np.split(jac, [3], axis=0) for jac in getJacobianCenter(q, SI=True)]))
+
         I_global = [R[:3,:3] @ I @ R[:3,:3].T for R, I in zip(getDHTransformations(q, SI=True), robot.InertiaMatrices)]
         D = sum([m_i * Jac_vci.T @ Jac_vci + Jac_wi.T @ J_i @ Jac_wi for m_i, Jac_vci, Jac_wi, J_i in zip(M, Jac_vci, Jac_wi, I_global)])
         return np.array(D)
     
     def C(q, q_dot):
-        C = np.zeros((len(q), len(q)))
-        D_num_diff = [partial_derivative(D, q, i) for i in range(len(q))]
-        for k in range(len(q)):
-            for j in range(len(q)):
-                C[k,j] = sum(1/2 * (D_num_diff[i][k,j] + D_num_diff[j][k,i] - D_num_diff[k][i,j]) * q_dot[i] for i in range(len(q)))
-        return C
+        # Stack the derivative matrices into a (n, n, n) array:
+        D_num_diff = np.stack([partial_derivative(D, q, i) for i in range(len(q))], axis=0)
+        
+        # Compute the C matrix using einsum: 
+        C_matrix = 0.5 * (
+            np.einsum('ikj,i->kj', D_num_diff, q_dot) +
+            np.einsum('jki,i->kj', D_num_diff, q_dot) -
+            np.einsum('kij,i->kj', D_num_diff, q_dot)
+        )
+        return C_matrix
     
     def P(q):
         rc_global = [(o_A_ol @ np.array([*r_c,1]))[:3] for o_A_ol,  r_c in zip(getDHTransformations(q, SI=True), robot.CenterOfMass)]

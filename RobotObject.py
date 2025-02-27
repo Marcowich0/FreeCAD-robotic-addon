@@ -193,7 +193,7 @@ class Link:
 def connectRobotToAssembly():
     doc = FreeCAD.ActiveDocument
     body = lambda ref: ref[1][0].split('.')[0]
-    edge = lambda ref: int(re.search(r'\d+$', ref[1][0].split('.')[1]).group()) - 1
+    edge = lambda ref: int(re.search(r'Edge(\d+)', ref[1][0]).group(1)) - 1
 
     robot = get_robot()
     if robot is None:

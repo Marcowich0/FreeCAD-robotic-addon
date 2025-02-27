@@ -1,0 +1,10 @@
+^D:\FREECAD\MOD\FREECAD-ROBOTIC-ADDON\ROBOT_DYNAMICS_MODULE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module -BD:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/build --check-stamp-file D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

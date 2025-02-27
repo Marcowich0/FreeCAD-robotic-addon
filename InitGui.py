@@ -12,7 +12,7 @@ import qt_move_end_effector
 import forward_kinematics
 import inverse_kinematics
 
-
+import dynamics
 
 import os
 
@@ -29,7 +29,7 @@ class Robotics (Workbench):
         self.appendToolbar("Initial position", ["changeRotationDirectionCommand", "rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", [ "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
-        self.appendToolbar("Trajectory", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand"])
+        self.appendToolbar("Trajectory", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "AddTrajectoryCommand2"])
 
 
         #self.appendMenu("My New Menu", self.list)

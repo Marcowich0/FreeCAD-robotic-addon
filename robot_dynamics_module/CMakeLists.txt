@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.10)
+project(compute_torque LANGUAGES CXX)
+
+# Find Python and NumPy
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+
+# Add submodules for pybind11 and Eigen
+add_subdirectory(external/pybind11)
+add_subdirectory(external/eigen)
+
+# Create the shared library
+add_library(compute_torque MODULE computeJointTorques.cpp)
+
+# Include directories: Python, NumPy and submodules (pybind11 and Eigen)
+target_include_directories(compute_torque PRIVATE 
+    ${Python3_INCLUDE_DIRS}
+    "D:/FreeCAD/bin/Lib/site-packages/numpy/_core/include"
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/eigen
+)
+
+# Link against Python and pybind11. (Eigen is header-only so no linking is needed.)
+target_link_libraries(compute_torque PRIVATE ${Python3_LIBRARIES} pybind11::module)
+
+# Ensure the output is a .pyd file (Python extension on Windows)
+set_target_properties(compute_torque PROPERTIES PREFIX "" SUFFIX ".pyd")

@@ -12,7 +12,7 @@ animation_state = "stopped"  # Possible states: "playing", "paused", "stopped"
 current_animation_index = 0
 animation_timer = None
 
-from main_utils import currentSelectionType, get_robot
+from main_utils import currentSelectionType, get_robot, displayMatrix
 from inverse_kinematics import solve_ik
 
 # Define the custom object class with properties (corrected spelling)
@@ -361,8 +361,8 @@ def solvePath():
         print("No trajectory points computed!")
         return
     angles = []
-    for point in points:
-        sol = solve_ik(point)
+    for i, point in enumerate(points):
+        sol = solve_ik(point, collision=False) if i>0 else solve_ik(point, collision=True) 
         angles.append(sol)
     sel.Angles = angles
         
@@ -391,11 +391,20 @@ def updateVelocityAndAcceleration():
 
 
 def updateTorques():
+    robot = get_robot()
     sel = FreeCADGui.Selection.getSelection()[0]
     q = np.deg2rad(sel.Angles)
     q_dot = sel.q_dot
     q_ddot = sel.q_ddot
-    tau = [computeJointTorques(q, q_dot, q_ddot) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
+    #tau = [computeJointTorques(q, q_dot, q_ddot) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
+    M = np.array(robot.Masses[1:])
+    InertiaMatrices = np.array(robot.InertiaMatrices[1:])
+    CenterOfMass = np.array(robot.CenterOfMass[1:])
+    DHperameters = np.array(robot.DHPerameters)
+    DHperameters[:,0] = 0
+    DHperameters = DHperameters.astype(float)
+    DHperameters[:,1:3] /= 1000
+    tau = [compute_torque.computeJointTorques(q, q_dot, q_ddot, M, InertiaMatrices, CenterOfMass, DHperameters) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
     sel.Torques = tau
 
 
@@ -413,8 +422,61 @@ def plotTorques():
 
     plt.plot(sel.t, sel.Torques)
     plt.grid(True, color='gray')  # Ensure grid lines are visible
-    plt.legend([f"Joint {i}" for i in range(len(sel.Torques[0]))])
+    plt.legend([f"Joint {i+1}" for i in range(len(sel.Torques[0]))])
     plt.xlabel("Time (s)")
     plt.ylabel("Torque (Nm)")
     plt.show()
 
+import sys
+sys.path.append(r"D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\build\Release")
+
+from forward_kinematics import getDHTransformations, getJacobianCenter
+
+import compute_torque
+
+class AddTrajectoryCommand2:
+    def GetResources(self):
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'trajectory.svg'), 
+                'MenuText': 'Add Trajectory', 
+                'ToolTip': 'Add a trajectory object'}
+
+    def Activated(self):
+        print("testing")
+        robot = get_robot()
+        q = np.deg2rad(get_robot().Angles)
+        q_dot = np.zeros_like(q)
+        q_ddot = np.zeros_like(q)
+        M = np.array(robot.Masses[1:])
+        InertiaMatrices = np.array(robot.InertiaMatrices[1:])
+        CenterOfMass = np.array(robot.CenterOfMass[1:])
+        DHperameters = np.array(robot.DHPerameters)
+        DHperameters[:,0] = 0
+        DHperameters = DHperameters.astype(float)
+        DHperameters[:,1:3] /= 1000
+        displayMatrix(DHperameters)
+
+
+        q_ddot[0] = 1
+        torques = compute_torque.computeJointTorques(q, q_dot, q_ddot, M, InertiaMatrices, CenterOfMass, DHperameters)
+        D, C, g = compute_torque.getMatrices(q, q_dot, M, InertiaMatrices, CenterOfMass, DHperameters)
+        print("Computed D matrix [C++]:")
+        displayMatrix(D)
+        print("Computed C matrix [C++]:")
+        displayMatrix(C)
+        print("Computed gravity [C++]:")
+        displayMatrix(g)
+        print("Computed torques [C++]:")
+        displayMatrix(torques)
+
+        
+        tau = computeJointTorques(q, q_dot, q_ddot)
+        print(f"Torques [Python]:")
+        displayMatrix(tau)
+
+
+
+
+    def IsActive(self):
+        return get_robot() is not None
+
+FreeCADGui.addCommand('AddTrajectoryCommand2', AddTrajectoryCommand2())

@@ -76,21 +76,53 @@ def currentSelectionType():
     
 
 def displayMatrix(matrix):
+    """
+    Prints a numeric matrix with aligned columns, rounding to 3 decimals
+    and replacing near-zero values with 0.
+
+    Accepts:
+    - list/tuple of numbers (1D or 2D)
+    - np.ndarray (1D or 2D)
+    - jax.numpy array (1D or 2D), if jax is installed
+
+    Example:
+        displayMatrix([1.234567, 0.0000000001, 3.14159])
+        displayMatrix([[1.234567, 2.71828], [3.14159, 0.00000001]])
+    """
+
     print("---------------------------------")
 
-    # Ensure matrix is a 2D list or numpy array
-    if isinstance(matrix, (list, np.ndarray)) and not isinstance(matrix[0], (list, np.ndarray)):
-        matrix = [matrix]  # Convert 1D array to a list of lists
+    # If it's a JAX array, convert to a NumPy array
+    # (only do this if jax is available in your environment)
+    try:
+        import jax.numpy as jnp
+        if isinstance(matrix, jnp.ndarray):
+            matrix = np.array(matrix)
+    except ImportError:
+        pass  # jax not installed, no conversion needed
 
-    # Process matrix: round values and replace near-zero values with 0
-    processed_matrix = [[0 if abs(x) < 1e-10 else round(float(x), 3) for x in row] for row in matrix]
-    
-    # Determine column widths
-    col_widths = [max(len(f"{col:.3f}") for col in col) for col in zip(*processed_matrix)]
+    # Convert Python lists/tuples (or any other type) to NumPy array
+    if not isinstance(matrix, np.ndarray):
+        matrix = np.array(matrix)
 
-    # Print formatted matrix with aligned columns
-    for row in processed_matrix:
-        formatted_row = "  ".join(f"{val:>{width}.3f}" for val, width in zip(row, col_widths))
+    # Ensure matrix is at least 2D (if 1D, reshape to (1, -1))
+    if matrix.ndim == 1:
+        matrix = matrix.reshape(1, -1)
+
+    # Convert values close to zero to 0 and round to 3 decimals
+    # We'll create a float copy first, to avoid issues with object dtypes
+    matrix = matrix.astype(float)
+    matrix = np.where(np.abs(matrix) < 1e-10, 0, np.round(matrix, 3))
+
+    # Convert all values to strings with 3 decimal places
+    string_matrix = [[f"{val:.3f}" for val in row] for row in matrix]
+
+    # Determine column widths by taking the max string length in each column
+    col_widths = [max(len(item) for item in col) for col in zip(*string_matrix)]
+
+    # Print each row with aligned columns
+    for row in string_matrix:
+        formatted_row = "  ".join(val.rjust(width) for val, width in zip(row, col_widths))
         print(formatted_row)
 
     print("---------------------------------")

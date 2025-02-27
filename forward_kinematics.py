@@ -316,7 +316,7 @@ def getJacobianCenter(q = None, SI = False):
                 Jw = sp.Matrix([0,0,0])
             
             Jac.append([*Jv, *Jw])
-        Jac_arr.append(np.array(Jac).T)
+        Jac_arr.append(np.array(Jac).T.astype(float))
 
     return Jac_arr
 

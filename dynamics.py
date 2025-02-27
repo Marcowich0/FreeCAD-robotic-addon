@@ -76,9 +76,9 @@ def computeJointTorques(q=None, q_dot=None, q_ddot = None):
 
 
     def D(q):
-        Jac_vci, Jac_wi = map(list, zip(*[np.split(jac, [3], axis=0) for jac in getJacobianCenter(q, SI=True)]))
+        Jac_vci, Jac_wi = map(list, zip(*[np.split(jac, [3], axis=0) for jac in getJacobianCenter(q, SI=True)[1:]]))
 
-        I_global = [R[:3,:3] @ I @ R[:3,:3].T for R, I in zip(getDHTransformations(q, SI=True), robot.InertiaMatrices)]
+        I_global = [R[:3,:3] @ I @ R[:3,:3].T for R, I in zip(getDHTransformations(q, SI=True)[1:], robot.InertiaMatrices[1:])]
         D = sum([m_i * Jac_vci.T @ Jac_vci + Jac_wi.T @ J_i @ Jac_wi for m_i, Jac_vci, Jac_wi, J_i in zip(M, Jac_vci, Jac_wi, I_global)])
         return np.array(D)
     
@@ -95,7 +95,7 @@ def computeJointTorques(q=None, q_dot=None, q_ddot = None):
         return C_matrix
     
     def P(q):
-        rc_global = [(o_A_ol @ np.array([*r_c,1]))[:3] for o_A_ol,  r_c in zip(getDHTransformations(q, SI=True), robot.CenterOfMass)]
+        rc_global = [(o_A_ol @ np.array([*r_c,1]))[:3] for o_A_ol,  r_c in zip(getDHTransformations(q, SI=True)[1:], robot.CenterOfMass[1:])]
         P = sum([m_i * gravity.T @ r_c for m_i, r_c in zip(M, rc_global)], np.array([0]))
         return P
     
@@ -108,14 +108,12 @@ def computeJointTorques(q=None, q_dot=None, q_ddot = None):
 
     tau = D_mat @ q_ddot + C_mat @ q_dot + g_vec
 
-    #print("Gravitational term")
-    #displayMatrix(g_vec)
-    #print("Dampening term")
-    #displayMatrix(C_mat)
-    #print("Mass term")
-    #displayMatrix(D_mat)
-    #print("Joint torques")
-    #displayMatrix(tau)
+    print("Gravitational term [Python]:")
+    displayMatrix(g_vec)
+    print("Dampening term [Python]")
+    displayMatrix(C_mat)
+    print("Mass term [Python]")
+    displayMatrix(D_mat)
 
     return tau
     

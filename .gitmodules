@@ -1,0 +1,6 @@
+[submodule "robot_dynamics_module/external/pybind11"]
+	path = robot_dynamics_module/external/pybind11
+	url = https://github.com/pybind/pybind11.git
+[submodule "robot_dynamics_module/external/eigen"]
+	path = robot_dynamics_module/external/eigen
+	url = https://gitlab.com/libeigen/eigen.git

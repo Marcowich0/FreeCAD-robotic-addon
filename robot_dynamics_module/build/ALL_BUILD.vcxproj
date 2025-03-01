@@ -180,6 +180,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
+    <ProjectReference Include="D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\build\inverse_kinematics_cpp.vcxproj">
+      <Project>{D4E4405F-391A-30B4-AB28-7C3AC8E0D5A2}</Project>
+      <Name>inverse_kinematics_cpp</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -348,25 +348,48 @@ FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())
 FreeCADGui.addCommand('PauseTrajectoryCommand', PauseTrajectoryCommand())
 FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 
-
+import inverse_kinematics_cpp
 
 def solvePath():
-    sel = FreeCADGui.Selection.getSelection()[0]
     
+    sel = FreeCADGui.Selection.getSelection()[0]
+    robot = get_robot()
+    DHperameters = np.array(robot.DHPerameters)
+    DHperameters[:,0] = 0
+    DHperameters = DHperameters.astype(float)
+    DHperameters[:,1:3] /= 1000
+    target_dir = FreeCAD.Vector(0, 0, -1)
     # Compute the trajectory points from the stored edge
     points = computeTrajectoryPoints(sel)
     if not points:
         print("No trajectory points computed!")
         return
     angles = []
+
+    print("printing dir")   
+    print(dir(inverse_kinematics_cpp))
     for i, point in enumerate(points):
-        sol = solve_ik(point, collision=False) if i>0 else solve_ik(point, collision=True) 
-        angles.append(sol)
+        if i==0:
+            q = np.deg2rad(solve_ik(point, collision=True))
+        else:
+            print(f"Solving for point {i+1}...")
+            print(f"Initial angles: rad {q} deg {np.rad2deg(q)}")
+            print(f"Target point: {point}")
+            converged, q = inverse_kinematics_cpp.solveIK(
+                q, point, target_dir, DHperameters,
+                max_iterations=100,
+                tolerance=0.1,
+                damping=0.1,
+                orientation_weight=1.0
+            )
+            print(f"solved as {q}, converged: {converged}")
+        angles.append(np.rad2deg(q))
     sel.Angles = angles
         
     time = [0, *[sel.DistanceBetweenPoints/sel.Velocity for _ in range(len(sel.Angles)-1)]]
     sel.t = np.cumsum(time)
     print("Trajectory solved and angles stored.")
+    robot.Angles = angles[-1]
 
 
 def solveDynamics():
@@ -425,8 +448,6 @@ def plotTorques():
     plt.ylabel("Torque (Nm)")
     plt.show()
 
-import sys
-sys.path.append(r"D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\build\Release")
 
 from forward_kinematics import getDHTransformations, getJacobianCenter
 

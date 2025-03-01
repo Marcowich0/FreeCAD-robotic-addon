@@ -1,5 +1,6 @@
 """FreeCAD init script of XXX module"""
 
+
 # ***************************************************************************
 # *   Copyright (c) 2015 John Doe john@doe.com                              *   
 # *                                                                         *
@@ -26,3 +27,8 @@
 ##FreeCAD.addImportType("My own format (*.own)", "importOwn")
 ##FreeCAD.addExportType("My own format (*.own)", "exportOwn")
 print("I am executing some stuff here when FreeCAD starts!")
+
+
+
+import sys
+sys.path.append(r"D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\build\Release")

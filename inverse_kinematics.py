@@ -1,12 +1,12 @@
 import FreeCAD
 import FreeCADGui
 import os
-from main_utils import get_robot, vec_to_numpy
+from main_utils import get_robot, vec_to_numpy, displayMatrix
 from secondary_utils import checkCollision
 from forward_kinematics import getDHTransformations, getJacobian
 import numpy as np
 import math
-
+import inverse_kinematics_cpp
 class ToTargetPointCommand:
     """Command to solve inverse kinematics for a target position."""
     def __init__(self):
@@ -21,7 +21,28 @@ class ToTargetPointCommand:
 
     def Activated(self):
         global_pos = self.get_target_position()
-        solve_ik(global_pos)
+        robot = get_robot()
+        q = np.deg2rad(robot.Angles)
+        DHperameters = np.array(robot.DHPerameters)
+        DHperameters[:,0] = 0
+        DHperameters = DHperameters.astype(float)
+        DHperameters[:,1:3] /= 1000
+
+        displayMatrix(q)
+        displayMatrix(getDHTransformations(q, SI = True)[-1])
+        displayMatrix(inverse_kinematics_cpp.getDHTransformations(q, DHperameters)[-1])
+
+        converged, q = inverse_kinematics_cpp.solveIK(
+                q, global_pos, np.array([0,0,0]), DHperameters,
+                max_iterations=100,
+                tolerance=0.1,
+                damping=0.1,
+                orientation_weight=1.0
+            )
+        robot.Angles = np.rad2deg(q)
+        displayMatrix(np.rad2deg(q))
+        print(f"Converged: {converged}")
+        FreeCAD.ActiveDocument.recompute()
 
     def IsActive(self):
         return self.is_target_selected() and get_robot() is not None

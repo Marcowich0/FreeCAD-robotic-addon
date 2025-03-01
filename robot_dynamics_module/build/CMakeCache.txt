@@ -348,6 +348,12 @@ compute_torque_LIB_DEPENDS:STATIC=general;C:/Users/marco/AppData/Local/Programs/
 //Value Computed by CMake
 compute_torque_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
 
+//Dependencies for the target
+inverse_kinematics_LIB_DEPENDS:STATIC=general;C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib;
+
+//Dependencies for the target
+inverse_kinematics_cpp_LIB_DEPENDS:STATIC=general;C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib;
+
 //Value Computed by CMake
 pybind11_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/build/external/pybind11
 

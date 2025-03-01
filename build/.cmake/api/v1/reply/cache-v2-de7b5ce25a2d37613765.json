@@ -1986,6 +1986,18 @@
 			"value" : "6e1dfb931f24dc63a41084206100ad4a"
 		},
 		{
+			"name" : "_Python3_Interpreter_REASON_FAILURE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Interpreter reason failure"
+				}
+			],
+			"type" : "INTERNAL",
+			"value" : ""
+		},
+		{
 			"name" : "_Python3_LIBRARY_DEBUG",
 			"properties" : 
 			[
@@ -2092,6 +2104,30 @@
 			],
 			"type" : "STATIC",
 			"value" : "D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module"
+		},
+		{
+			"name" : "inverse_kinematics_LIB_DEPENDS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Dependencies for the target"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "general;C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib;"
+		},
+		{
+			"name" : "inverse_kinematics_cpp_LIB_DEPENDS",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Dependencies for the target"
+				}
+			],
+			"type" : "STATIC",
+			"value" : "general;C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib;"
 		},
 		{
 			"name" : "pybind11_BINARY_DIR",

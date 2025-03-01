@@ -8,21 +8,24 @@ find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 add_subdirectory(external/pybind11)
 add_subdirectory(external/eigen)
 
-# Create the shared library
+# Create the compute_torque module (dynamics)
 add_library(compute_torque MODULE computeJointTorques.cpp)
-
-# Include directories: Python, NumPy and submodules (pybind11 and Eigen)
 target_include_directories(compute_torque PRIVATE 
     ${Python3_INCLUDE_DIRS}
     "D:/FreeCAD/bin/Lib/site-packages/numpy/_core/include"
     ${CMAKE_CURRENT_SOURCE_DIR}/external/eigen
 )
-
-# Enable C++14 standard (required for Eigen::AutoDiff)
 target_compile_features(compute_torque PRIVATE cxx_std_14)
-
-# Link against Python and pybind11. (Eigen is header-only so no linking is needed.)
 target_link_libraries(compute_torque PRIVATE ${Python3_LIBRARIES} pybind11::module)
-
-# Ensure the output is a .pyd file (Python extension on Windows)
 set_target_properties(compute_torque PROPERTIES PREFIX "" SUFFIX ".pyd")
+
+# Create the inverse_kinematics module (IK)
+add_library(inverse_kinematics_cpp MODULE inverseKinematicSolver.cpp)
+target_include_directories(inverse_kinematics_cpp PRIVATE 
+    ${Python3_INCLUDE_DIRS}
+    "D:/FreeCAD/bin/Lib/site-packages/numpy/_core/include"
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/eigen
+)
+target_compile_features(inverse_kinematics_cpp PRIVATE cxx_std_14)
+target_link_libraries(inverse_kinematics_cpp PRIVATE ${Python3_LIBRARIES} pybind11::module)
+set_target_properties(inverse_kinematics_cpp PROPERTIES PREFIX "" SUFFIX ".pyd")

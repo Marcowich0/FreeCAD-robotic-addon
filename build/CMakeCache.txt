@@ -351,6 +351,12 @@ compute_torque_LIB_DEPENDS:STATIC=general;C:/Users/marco/AppData/Local/Programs/
 //Value Computed by CMake
 compute_torque_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
 
+//Dependencies for the target
+inverse_kinematics_LIB_DEPENDS:STATIC=general;C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib;
+
+//Dependencies for the target
+inverse_kinematics_cpp_LIB_DEPENDS:STATIC=general;C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib;
+
 //Value Computed by CMake
 pybind11_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/pybind11
 
@@ -563,6 +569,8 @@ _Python3_INCLUDE_DIR:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Pytho
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;0;64;<none>;cp311-win_amd64;;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=6e1dfb931f24dc63a41084206100ad4a
+//Interpreter reason failure
+_Python3_Interpreter_REASON_FAILURE:INTERNAL=
 //Path to a library.
 _Python3_LIBRARY_DEBUG:INTERNAL=_Python3_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.

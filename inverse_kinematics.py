@@ -20,7 +20,7 @@ class ToTargetPointCommand:
         }
 
     def Activated(self):
-        global_pos = self.get_target_position()
+        global_pos = np.array(self.get_target_position())
         robot = get_robot()
         q = np.deg2rad(robot.Angles)
         DHperameters = np.array(robot.DHPerameters)
@@ -32,17 +32,16 @@ class ToTargetPointCommand:
         displayMatrix(getDHTransformations(q, SI = True)[-1])
         displayMatrix(inverse_kinematics_cpp.getDHTransformations(q, DHperameters)[-1])
 
-        converged, q = inverse_kinematics_cpp.solveIK(
-                q, global_pos, np.array([0,0,0]), DHperameters,
-                max_iterations=100,
-                tolerance=0.1,
-                damping=0.1,
-                orientation_weight=1.0
-            )
-        robot.Angles = np.rad2deg(q)
+        displayMatrix(getJacobian(q, SI = True))
+        displayMatrix(inverse_kinematics_cpp.getJacobian(q, DHperameters))
+
+        print(f"type of inputs, q: {type(q)}, global_pos: {type(global_pos)}, DHperameters: {type(DHperameters)}")
+        displayMatrix(global_pos)
+        displayMatrix(DHperameters)
+
+        converged, q = inverse_kinematics_cpp.solveIK(q, global_pos/1000, vec_to_numpy(robot.EndEffectorOrientation), DHperameters)
+        robot.Angles =  np.rad2deg(q).tolist()
         displayMatrix(np.rad2deg(q))
-        print(f"Converged: {converged}")
-        FreeCAD.ActiveDocument.recompute()
 
     def IsActive(self):
         return self.is_target_selected() and get_robot() is not None
@@ -76,7 +75,7 @@ FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 
 
-def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orientation_weight=1.0, collision = True):
+def solve_ik(q, target_pos, target_dir):
     """
     Solves inverse kinematics to reach target position and optionally align with target direction.
     
@@ -91,13 +90,15 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
     Returns:
         bool: True if converged, False if failed
     """
-    robot = get_robot()
-    target_dir = robot.EndEffectorOrientation
-    target_active = abs(target_dir.Length - 1) < 1e-4
-    q = np.deg2rad(robot.Angles)
 
-    if not isinstance(target_pos, np.ndarray):
-        target_pos = vec_to_numpy(target_pos)
+    max_iterations=100
+    tolerance=0.1
+    damping=0.1
+    orientation_weight=1.0
+    collision = True
+
+    robot = get_robot()
+    target_active = abs(np.linalg.norm(target_dir) - 1) < 1e-4
         
     for iteration in range(max_iterations):
         
@@ -128,7 +129,7 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
         # Calculate total error
         total_error = np.linalg.norm(delta_x)
         if total_error < tolerance:
-            robot.Angles = [*np.rad2deg(q)]
+            robot.Angles = np.rad2deg(q).tolist()
             FreeCAD.ActiveDocument.recompute()
             if collision and checkCollision():
                 q = [np.random.uniform(-np.pi, np.pi) for _ in range(len(q))]
@@ -137,9 +138,9 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
                 FreeCAD.Console.PrintMessage(
                     f"IK converged after {iteration+1} iterations\n"
                     f"Position error: {position_error:.2f} mm"
-                    + (f", Orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
+                    + (f", Orientation error: {orientation_error:.4f} rad" if target_dir.any() else "") + "\n"
                 )
-                return [*np.rad2deg(q)]
+                return q
         
         # Calculate Jacobian at current position
         J_full = getJacobian(q, SI = False)
@@ -161,7 +162,7 @@ def solve_ik(target_pos, max_iterations=100, tolerance=0.1, damping=0.1, orienta
     FreeCAD.Console.PrintWarning(
         f"IK failed to converge after {max_iterations} iterations\n"
         f"Final position error: {position_error:.2f} mm"
-        + (f", orientation error: {orientation_error:.4f} rad" if target_dir else "") + "\n"
+        + (f", orientation error: {orientation_error:.4f} rad" if target_dir.any() else "") + "\n"
     )
 
     return False

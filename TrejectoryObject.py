@@ -349,6 +349,7 @@ FreeCADGui.addCommand('PauseTrajectoryCommand', PauseTrajectoryCommand())
 FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 
 import inverse_kinematics_cpp
+from main_utils import vec_to_numpy
 
 def solvePath():
     
@@ -358,9 +359,9 @@ def solvePath():
     DHperameters[:,0] = 0
     DHperameters = DHperameters.astype(float)
     DHperameters[:,1:3] /= 1000
-    target_dir = FreeCAD.Vector(0, 0, -1)
+    target_dir = vec_to_numpy(robot.EndEffectorOrientation)
     # Compute the trajectory points from the stored edge
-    points = computeTrajectoryPoints(sel)
+    points = [vec_to_numpy(p) for p in computeTrajectoryPoints(sel)]
     if not points:
         print("No trajectory points computed!")
         return
@@ -369,21 +370,18 @@ def solvePath():
     print("printing dir")   
     print(dir(inverse_kinematics_cpp))
     for i, point in enumerate(points):
+        point = point/1000
         if i==0:
-            q = np.deg2rad(solve_ik(point, collision=True))
+            q = np.deg2rad(robot.Angles)
+            q = solve_ik(q, points[0], target_dir)
         else:
-            print(f"Solving for point {i+1}...")
-            print(f"Initial angles: rad {q} deg {np.rad2deg(q)}")
-            print(f"Target point: {point}")
-            converged, q = inverse_kinematics_cpp.solveIK(
-                q, point, target_dir, DHperameters,
-                max_iterations=100,
-                tolerance=0.1,
-                damping=0.1,
-                orientation_weight=1.0
-            )
+            print(f"point: {i}")
+            displayMatrix(q)
+            displayMatrix(point)
+            displayMatrix(target_dir)
+            converged, q = inverse_kinematics_cpp.solveIK(q, point, target_dir, DHperameters)
             print(f"solved as {q}, converged: {converged}")
-        angles.append(np.rad2deg(q))
+        angles.append(np.rad2deg(q).tolist())
     sel.Angles = angles
         
     time = [0, *[sel.DistanceBetweenPoints/sel.Velocity for _ in range(len(sel.Angles)-1)]]

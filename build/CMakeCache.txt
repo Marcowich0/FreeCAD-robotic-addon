@@ -14,6 +14,21 @@
 # EXTERNAL cache entries
 ########################
 
+//Enable the build of the documentation and website.
+AUTODIFF_BUILD_DOCS:BOOL=ON
+
+//Enable the compilation of the example files.
+AUTODIFF_BUILD_EXAMPLES:BOOL=ON
+
+//Enable the compilation of the python bindings.
+AUTODIFF_BUILD_PYTHON:BOOL=ON
+
+//Enable the compilation of the test files.
+AUTODIFF_BUILD_TESTS:BOOL=ON
+
+//Path to a program.
+CCACHE_PROGRAM:FILEPATH=CCACHE_PROGRAM-NOTFOUND
+
 //The directory relative to CMAKE_INSTALL_PREFIX where Eigen3Config.cmake
 // is installed
 CMAKEPACKAGE_INSTALL_DIR:PATH=share/eigen3/cmake
@@ -25,6 +40,9 @@ CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Too
 // supports Debug, Release, MinSizeRel, and RelWithDebInfo, anything
 // else will be ignored.
 CMAKE_CONFIGURATION_TYPES:STRING=Debug;Release;MinSizeRel;RelWithDebInfo
+
+//CUDA compiler
+CMAKE_CUDA_COMPILER:FILEPATH=NOTFOUND
 
 //Flags used by the CXX compiler during all build types.
 CMAKE_CXX_FLAGS:STRING=/DWIN32 /D_WINDOWS /W3 /GR /EHsc
@@ -286,6 +304,9 @@ EIGEN_LEAVE_TEST_IN_ALL_TARGET:BOOL=OFF
 //Value Computed by CMake
 Eigen3_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/eigen
 
+//The directory containing a CMake configuration file for Eigen3.
+Eigen3_DIR:PATH=Eigen3_DIR-NOTFOUND
+
 //Value Computed by CMake
 Eigen3_IS_TOP_LEVEL:STATIC=OFF
 
@@ -340,6 +361,15 @@ PYBIND11_USE_CROSSCOMPILING:BOOL=OFF
 PYTHON_EXECUTABLE:FILEPATH=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe
 
 //Value Computed by CMake
+autodiff_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/autodiff
+
+//Value Computed by CMake
+autodiff_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+autodiff_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/autodiff
+
+//Value Computed by CMake
 compute_torque_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build
 
 //Value Computed by CMake
@@ -381,6 +411,8 @@ CMAKE_COMMAND:INTERNAL=C:/Program Files/CMake/bin/cmake.exe
 CMAKE_CPACK_COMMAND:INTERNAL=C:/Program Files/CMake/bin/cpack.exe
 //Path to ctest program executable.
 CMAKE_CTEST_COMMAND:INTERNAL=C:/Program Files/CMake/bin/ctest.exe
+//ADVANCED property for variable: CMAKE_CUDA_COMPILER
+CMAKE_CUDA_COMPILER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_FLAGS
 CMAKE_CXX_FLAGS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_FLAGS_DEBUG
@@ -563,6 +595,8 @@ _Python3_INCLUDE_DIR:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Pytho
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;0;64;<none>;cp311-win_amd64;;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=6e1dfb931f24dc63a41084206100ad4a
+//Interpreter reason failure
+_Python3_Interpreter_REASON_FAILURE:INTERNAL=
 //Path to a library.
 _Python3_LIBRARY_DEBUG:INTERNAL=_Python3_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.

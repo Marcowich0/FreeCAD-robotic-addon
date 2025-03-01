@@ -1,0 +1,78 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"external/eigen/unsupported/Eigen/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 24,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 29,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Devel",
+			"destination" : "include/eigen3/unsupported/Eigen",
+			"paths" : 
+			[
+				"external/eigen/unsupported/Eigen/AdolcForward",
+				"external/eigen/unsupported/Eigen/AlignedVector3",
+				"external/eigen/unsupported/Eigen/ArpackSupport",
+				"external/eigen/unsupported/Eigen/AutoDiff",
+				"external/eigen/unsupported/Eigen/BVH",
+				"external/eigen/unsupported/Eigen/EulerAngles",
+				"external/eigen/unsupported/Eigen/FFT",
+				"external/eigen/unsupported/Eigen/IterativeSolvers",
+				"external/eigen/unsupported/Eigen/KroneckerProduct",
+				"external/eigen/unsupported/Eigen/LevenbergMarquardt",
+				"external/eigen/unsupported/Eigen/MatrixFunctions",
+				"external/eigen/unsupported/Eigen/MPRealSupport",
+				"external/eigen/unsupported/Eigen/NNLS",
+				"external/eigen/unsupported/Eigen/NonLinearOptimization",
+				"external/eigen/unsupported/Eigen/NumericalDiff",
+				"external/eigen/unsupported/Eigen/OpenGLSupport",
+				"external/eigen/unsupported/Eigen/Polynomials",
+				"external/eigen/unsupported/Eigen/SparseExtra",
+				"external/eigen/unsupported/Eigen/SpecialFunctions",
+				"external/eigen/unsupported/Eigen/Splines"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Devel",
+			"destination" : "include/eigen3/unsupported/Eigen",
+			"paths" : 
+			[
+				"external/eigen/unsupported/Eigen/src"
+			],
+			"type" : "directory"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "external/eigen/unsupported/Eigen",
+		"source" : "external/eigen/unsupported/Eigen"
+	}
+}

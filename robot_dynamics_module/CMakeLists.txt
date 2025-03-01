@@ -18,6 +18,9 @@ target_include_directories(compute_torque PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/eigen
 )
 
+# Enable C++14 standard (required for Eigen::AutoDiff)
+target_compile_features(compute_torque PRIVATE cxx_std_14)
+
 # Link against Python and pybind11. (Eigen is header-only so no linking is needed.)
 target_link_libraries(compute_torque PRIVATE ${Python3_LIBRARIES} pybind11::module)
 

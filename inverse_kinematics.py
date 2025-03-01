@@ -70,12 +70,25 @@ class ToTargetPointCommand:
 FreeCADGui.addCommand('ToTargetPointCommand', ToTargetPointCommand())
 
 
+def solve_ik(q, target_pos, target_dir, DHperameters):
+    print(f"Received q: {q}")
+    robot = get_robot()
+    q = np.deg2rad(robot.Angles)
+    for i in range(300):
+        converged, q = inverse_kinematics_cpp.solveIK(q, target_pos, target_dir, DHperameters)
+        robot.Angles =  np.rad2deg(q).tolist()
+        FreeCAD.ActiveDocument.recompute()
+        if checkCollision():
+            q = [np.random.uniform(-np.pi, np.pi) for _ in range(len(q))]
+        else:
+            print(f"Returning q: {q}")
+            return q
+    
 
 
 
 
-
-def solve_ik(q, target_pos, target_dir):
+def solve_ik_old(q, target_pos, target_dir):
     """
     Solves inverse kinematics to reach target position and optionally align with target direction.
     
@@ -91,7 +104,7 @@ def solve_ik(q, target_pos, target_dir):
         bool: True if converged, False if failed
     """
 
-    max_iterations=100
+    max_iterations=300
     tolerance=0.1
     damping=0.1
     orientation_weight=1.0
@@ -102,7 +115,7 @@ def solve_ik(q, target_pos, target_dir):
         
     for iteration in range(max_iterations):
         
-        T_arr = getDHTransformations(q)
+        T_arr = getDHTransformations(q, SI=True)
         current_pos = (T_arr[-1] @ np.array([0, 0, 0, 1]))[:3]
 
         delta_x_position = target_pos - current_pos
@@ -143,7 +156,7 @@ def solve_ik(q, target_pos, target_dir):
                 return q
         
         # Calculate Jacobian at current position
-        J_full = getJacobian(q, SI = False)
+        J_full = getJacobian(q, SI = True)
         
         # Select appropriate Jacobian based on orientation solving
         J = J_full if target_active else J_full[:3, :]

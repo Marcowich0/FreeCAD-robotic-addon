@@ -117,7 +117,7 @@
 {
 // Hard-coded solver parameters
 const int max_iterations = 300;
-const double tolerance   = 0.01;
+const double tolerance   = 0.1;
 const double damping     = 0.1;   // Damping factor
 const double orientation_weight = 1.0;
 // Check if the provided target_dir is near unit length

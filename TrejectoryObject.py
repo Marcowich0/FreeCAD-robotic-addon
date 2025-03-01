@@ -205,6 +205,7 @@ class SolveTrajectoryCommand:
 
         solvePath()
         solveDynamics()
+        plotTorques()
 
 
 
@@ -217,7 +218,7 @@ class SolveTrajectoryCommand:
         # Explicitly sort the stats by cumulative time (stat index 3) in descending order.
         sorted_stats = sorted(stats.stats.items(), key=lambda item: item[1][3], reverse=True)
         
-        print("\nProfiling Results (Functions > 2 sec):")
+        print("\nProfiling Results (Functions > 0.5 sec):")
         
         # Define a header format: left-align the function name and right-align the time.
         header_format = "{:<60s} {:>10s}"
@@ -228,7 +229,7 @@ class SolveTrajectoryCommand:
         # stat[3] is the cumulative time.
         for func, stat in sorted_stats:
             cumulative_time = stat[3]
-            if cumulative_time > 1.0:
+            if cumulative_time > 0.5:
                 func_str = f"{func[2]} ({func[0]}:{func[1]})"
                 print(header_format.format(func_str, f"{cumulative_time:.2f}"))
         
@@ -350,6 +351,7 @@ FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 
 import inverse_kinematics_cpp
 from main_utils import vec_to_numpy
+from inverse_kinematics import solve_ik_old
 
 def solvePath():
     
@@ -361,7 +363,7 @@ def solvePath():
     DHperameters[:,1:3] /= 1000
     target_dir = vec_to_numpy(robot.EndEffectorOrientation)
     # Compute the trajectory points from the stored edge
-    points = [vec_to_numpy(p) for p in computeTrajectoryPoints(sel)]
+    points = [vec_to_numpy(p)/1000 for p in computeTrajectoryPoints(sel)]
     if not points:
         print("No trajectory points computed!")
         return
@@ -370,17 +372,16 @@ def solvePath():
     print("printing dir")   
     print(dir(inverse_kinematics_cpp))
     for i, point in enumerate(points):
-        point = point/1000
         if i==0:
             q = np.deg2rad(robot.Angles)
-            q = solve_ik(q, points[0], target_dir)
+            q = solve_ik_old(q, point, target_dir)
         else:
             print(f"point: {i}")
             displayMatrix(q)
             displayMatrix(point)
             displayMatrix(target_dir)
-            converged, q = inverse_kinematics_cpp.solveIK(q, point, target_dir, DHperameters)
-            print(f"solved as {q}, converged: {converged}")
+            q = solve_ik_old(q, point, target_dir)
+            #print(f"solved as {q}, converged: {converged}")
         angles.append(np.rad2deg(q).tolist())
     sel.Angles = angles
         

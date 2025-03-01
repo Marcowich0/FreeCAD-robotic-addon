@@ -4,6 +4,3 @@
 [submodule "robot_dynamics_module/external/eigen"]
 	path = robot_dynamics_module/external/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "robot_dynamics_module/external/autodiff"]
-	path = robot_dynamics_module/external/autodiff
-	url = https://github.com/autodiff/autodiff.git

@@ -204,11 +204,9 @@ class SolveTrajectoryCommand:
         profiler.enable()
 
         solvePath()
-        
         solveDynamics()
 
-        print("Dynamics solved.")
-        plotTorques()
+
 
         profiler.disable()
 
@@ -230,7 +228,7 @@ class SolveTrajectoryCommand:
         # stat[3] is the cumulative time.
         for func, stat in sorted_stats:
             cumulative_time = stat[3]
-            if cumulative_time > 2.0:
+            if cumulative_time > 1.0:
                 func_str = f"{func[2]} ({func[0]}:{func[1]})"
                 print(header_format.format(func_str, f"{cumulative_time:.2f}"))
         

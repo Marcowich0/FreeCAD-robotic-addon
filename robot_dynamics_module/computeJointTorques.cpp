@@ -32,12 +32,12 @@
  // Helper to convert regular Eigen::Vector to AutoDiff vector with derivatives initialized
  template<typename Derived>
  Eigen::Matrix<AutoDiffScalar, Eigen::Dynamic, 1> toAutoDiff(
-     const Eigen::MatrixBase<Derived>& x, int wrt_idx = -1, int num_vars = -1) 
+     const Eigen::MatrixBase<Derived>& x, Eigen::Index wrt_idx = -1, Eigen::Index num_vars = -1)
  {
      if (num_vars < 0) num_vars = x.size();
      Eigen::Matrix<AutoDiffScalar, Eigen::Dynamic, 1> result(x.size());
  
-     for (int i = 0; i < x.size(); ++i) {
+     for (Eigen::Index i = 0; i < x.size(); ++i) {
          if (wrt_idx < 0) {
              // Initialize with identity Jacobian (for all variables)
              Eigen::VectorXd derivatives = Eigen::VectorXd::Zero(num_vars);
@@ -60,7 +60,7 @@
  template<typename Derived>
  Eigen::VectorXd extractValue(const Eigen::MatrixBase<Derived>& x) {
      Eigen::VectorXd result(x.size());
-     for (int i = 0; i < x.size(); ++i) {
+     for (Eigen::Index i = 0; i < x.size(); ++i) {
          result(i) = x(i).value();
      }
      return result;
@@ -70,9 +70,9 @@
  template<typename Derived>
  Eigen::MatrixXd extractJacobian(const Eigen::MatrixBase<Derived>& x) {
      if (x.size() == 0) return Eigen::MatrixXd(0, 0);
-     int n_vars = x(0).derivatives().size();
+     Eigen::Index n_vars = x(0).derivatives().size();
      Eigen::MatrixXd result(x.size(), n_vars);
-     for (int i = 0; i < x.size(); ++i) {
+     for (Eigen::Index i = 0; i < x.size(); ++i) {
          result.row(i) = x(i).derivatives();
      }
      return result;
@@ -87,18 +87,18 @@
      const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& q,
      const Eigen::MatrixXd& DHparams)
  {
-     size_t n = static_cast<size_t>(q.size());
+     Eigen::Index n = q.size();
      std::vector<Eigen::Matrix<Scalar, 4, 4>> transforms;
      transforms.reserve(n);
      Eigen::Matrix<Scalar, 4, 4> T = Eigen::Matrix<Scalar, 4, 4>::Identity();
-     
-     for (size_t i = 0; i < n; ++i) {
+ 
+     for (Eigen::Index i = 0; i < n; ++i) {
          double theta_offset = DHparams(i, 0);   // offset for theta
-         Scalar theta = q(i) + theta_offset;     // effective joint angle
+         Scalar theta = q(i) + theta_offset;       // effective joint angle
          double d     = DHparams(i, 1);
          double a     = DHparams(i, 2);
          double alpha = DHparams(i, 3);
-         
+ 
          Eigen::Matrix<Scalar, 4, 4> A;
          A <<  cos(theta), -sin(theta)*cos(alpha),  sin(theta)*sin(alpha),  a*cos(theta),
                sin(theta),  cos(theta)*cos(alpha), -cos(theta)*sin(alpha),  a*sin(theta),
@@ -120,26 +120,26 @@
                    const std::vector<Eigen::Matrix<Scalar, 4, 4>>& transforms,
                    const std::vector<Eigen::Vector3d>& comPositions)
  {
-     size_t n = static_cast<size_t>(q.size());
+     Eigen::Index n = q.size();
      std::vector<Eigen::Matrix<Scalar, 6, Eigen::Dynamic>> jacobians;
      jacobians.reserve(n);
-     
+ 
      const Eigen::Vector3d baseZ(0, 0, 1);
      const Eigen::Vector3d baseOrigin(0, 0, 0);
-     
-     for (size_t i = 0; i < n; ++i) {
+ 
+     for (Eigen::Index i = 0; i < n; ++i) {
          // Transform COM to global coordinates.
          Eigen::Matrix<Scalar, 4, 1> comLocalH;
          comLocalH << comPositions[i](0), comPositions[i](1), comPositions[i](2), Scalar(1.0);
-         
+ 
          Eigen::Matrix<Scalar, 4, 1> comGlobalH = transforms[i] * comLocalH;
          Eigen::Matrix<Scalar, 3, 1> comGlobal = comGlobalH.template head<3>();
-         
+ 
          // Initialize a 6xn Jacobian for link i.
          Eigen::Matrix<Scalar, 6, Eigen::Dynamic> J(6, n);
          J.setZero();
-         
-         for (size_t j = 0; j < n; ++j) {
+ 
+         for (Eigen::Index j = 0; j < n; ++j) {
              Eigen::Matrix<Scalar, 3, 1> zAxis, origin_j;
              if (j == 0) {
                  zAxis = baseZ.template cast<Scalar>();
@@ -148,7 +148,7 @@
                  zAxis = transforms[j - 1].template block<3,1>(0, 2);
                  origin_j = transforms[j - 1].template block<3,1>(0, 3);
              }
-             
+ 
              if (j <= i) {
                  Eigen::Matrix<Scalar, 3, 1> r = comGlobal - origin_j;
                  Eigen::Matrix<Scalar, 3, 1> Jv = zAxis.cross(r);
@@ -173,29 +173,29 @@
           const std::vector<Eigen::Vector3d>& comPositions,
           const Eigen::MatrixXd& DHparams)
  {
-     size_t n = static_cast<size_t>(q.size());
+     Eigen::Index n = q.size();
      Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> D = 
          Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Zero(n, n);
-     
+ 
      std::vector<Eigen::Matrix<Scalar, 4, 4>> transforms = getDHTransformations(q, DHparams);
      std::vector<Eigen::Matrix<Scalar, 6, Eigen::Dynamic>> jacobians = 
          getJacobianCenter(q, transforms, comPositions);
-     
-     for (size_t i = 0; i < n; ++i) {
+ 
+     for (Eigen::Index i = 0; i < n; ++i) {
          Eigen::Matrix<Scalar, 3, Eigen::Dynamic> Jv_i = jacobians[i].template topRows<3>();
          Eigen::Matrix<Scalar, 3, Eigen::Dynamic> Jw_i = jacobians[i].template bottomRows<3>();
          Eigen::Matrix<Scalar, 3, 3> R_i = transforms[i].template block<3,3>(0, 0);
-         
+ 
          // Convert inertia matrix to AutoDiff
          Eigen::Matrix<Scalar, 3, 3> I_i;
-         for (int r = 0; r < 3; ++r) {
-             for (int c = 0; c < 3; ++c) {
+         for (Eigen::Index r = 0; r < 3; ++r) {
+             for (Eigen::Index c = 0; c < 3; ++c) {
                  I_i(r, c) = Scalar(inertiaMatrices[i](r, c));
              }
          }
-         
+ 
          Eigen::Matrix<Scalar, 3, 3> I_global = R_i * I_i * R_i.transpose();
-         
+ 
          D += Scalar(masses[i]) * (Jv_i.transpose() * Jv_i)
             + (Jw_i.transpose() * I_global * Jw_i);
      }
@@ -211,23 +211,23 @@
                  const std::vector<Eigen::Vector3d>& comPositions,
                  const Eigen::MatrixXd& DHparams)
  {
-     size_t n = static_cast<size_t>(q.size());
+     Eigen::Index n = q.size();
      const Eigen::Vector3d gravity(0, 0, -9.81);
      Scalar P = Scalar(0.0);
-     
+ 
      std::vector<Eigen::Matrix<Scalar, 4, 4>> transforms = getDHTransformations(q, DHparams);
-     
-     for (size_t i = 0; i < n; ++i) {
+ 
+     for (Eigen::Index i = 0; i < n; ++i) {
          Eigen::Matrix<Scalar, 4, 1> comLocalH;
          comLocalH << comPositions[i](0), comPositions[i](1), comPositions[i](2), Scalar(1.0);
-         
+ 
          Eigen::Matrix<Scalar, 4, 1> comGlobalH = transforms[i] * comLocalH;
          Eigen::Matrix<Scalar, 3, 1> comGlobal = comGlobalH.template head<3>();
-         
+ 
          // Convert gravity to AutoDiff scalar
          Eigen::Matrix<Scalar, 3, 1> g;
          g << Scalar(gravity(0)), Scalar(gravity(1)), Scalar(gravity(2));
-         
+ 
          P += Scalar(masses[i]) * g.dot(comGlobal);
      }
      return P;
@@ -241,20 +241,20 @@
                            const std::vector<Eigen::Vector3d>& comPositions,
                            const Eigen::MatrixXd& DHparams)
  {
-     int n = q.size();
+     Eigen::Index n = q.size();
      Eigen::VectorXd g_vec(n);
-     
+ 
      // Convert to AutoDiff with derivatives initialized
      auto q_ad = toAutoDiff(q);
-     
+ 
      // Compute potential energy with AutoDiff
      AutoDiffScalar P = computeP(q_ad, masses, comPositions, DHparams);
-     
+ 
      // Extract gradient from derivatives
-     for (int i = 0; i < n; ++i) {
+     for (Eigen::Index i = 0; i < n; ++i) {
          g_vec(i) = P.derivatives()(i);
      }
-     
+ 
      return g_vec;
  }
  
@@ -262,45 +262,35 @@
  // computeC
  // Computes the Coriolis matrix C(q, q_dot) using automatic differentiation of D(q).
  Eigen::MatrixXd computeC(const Eigen::VectorXd& q,
-                          const Eigen::VectorXd& q_dot,
-                          const std::vector<double>& masses,
-                          const std::vector<Eigen::Matrix3d>& inertiaMatrices,
-                          const std::vector<Eigen::Vector3d>& comPositions,
-                          const Eigen::MatrixXd& DHparams)
- {
-     int n = q.size();
-     Eigen::MatrixXd Cmat = Eigen::MatrixXd::Zero(n, n);
-     
-     // For each k, j pair, compute the Coriolis element C_kj
-     for (int k = 0; k < n; ++k) {
-         for (int j = 0; j < n; ++j) {
-             double c_kj = 0.0;
-             
-             // For each i, compute the Christoffel symbols using automatic differentiation
-             for (int i = 0; i < n; ++i) {
-                 // Use AutoDiff to compute dD_dqi
-                 auto q_ad = toAutoDiff(q);
-                 auto D_ad = computeD(q_ad, masses, inertiaMatrices, comPositions, DHparams);
-                 
-                 // Extract the derivatives of D(k,j) w.r.t q(i)
-                 double dD_dqi_kj = D_ad(k, j).derivatives()(i);
-                 
-                 // Extract the derivatives of D(k,i) w.r.t q(j)
-                 double dD_dqj_ki = D_ad(k, i).derivatives()(j);
-                 
-                 // Extract the derivatives of D(i,j) w.r.t q(k)
-                 double dD_dqk_ij = D_ad(i, j).derivatives()(k);
-                 
-                 // Compute the Christoffel symbol and multiply by q_dot(i)
-                 c_kj += 0.5 * (dD_dqi_kj + dD_dqj_ki - dD_dqk_ij) * q_dot(i);
-             }
-             
-             Cmat(k, j) = c_kj;
-         }
-     }
-     
-     return Cmat;
- }
+    const Eigen::VectorXd& q_dot,
+    const std::vector<double>& masses,
+    const std::vector<Eigen::Matrix3d>& inertiaMatrices,
+    const std::vector<Eigen::Vector3d>& comPositions,
+    const Eigen::MatrixXd& DHparams)
+{
+Eigen::Index n = q.size();
+Eigen::MatrixXd Cmat = Eigen::MatrixXd::Zero(n, n);
+
+// Compute D_ad once instead of recomputing it in every loop iteration.
+auto q_ad = toAutoDiff(q);
+auto D_ad = computeD(q_ad, masses, inertiaMatrices, comPositions, DHparams);
+
+// Use the already computed D_ad to extract the required derivatives.
+for (Eigen::Index k = 0; k < n; ++k) {
+for (Eigen::Index j = 0; j < n; ++j) {
+double c_kj = 0.0;
+for (Eigen::Index i = 0; i < n; ++i) {
+double dD_dqi_kj = D_ad(k, j).derivatives()(i);
+double dD_dqj_ki = D_ad(k, i).derivatives()(j);
+double dD_dqk_ij = D_ad(i, j).derivatives()(k);
+c_kj += 0.5 * (dD_dqi_kj + dD_dqj_ki - dD_dqk_ij) * q_dot(i);
+}
+Cmat(k, j) = c_kj;
+}
+}
+
+return Cmat;
+}
  
  // -----------------------------------------------------------------------------
  // computeJointTorques
@@ -339,10 +329,10 @@
      auto masses_buf = masses_array.request();
      if(masses_buf.ndim != 1)
          throw std::runtime_error("masses must be a 1D numpy array");
-     size_t n = masses_buf.shape[0];
+     Eigen::Index n = masses_buf.shape[0];
      std::vector<double> masses(n);
      double* masses_ptr = static_cast<double*>(masses_buf.ptr);
-     for (size_t i = 0; i < n; i++) {
+     for (Eigen::Index i = 0; i < n; i++) {
          masses[i] = masses_ptr[i];
      }
  
@@ -352,16 +342,16 @@
          throw std::runtime_error("inertiaMatrices must be a 3D numpy array with shape (n,3,3)");
      if(inertia_buf.shape[1] != 3 || inertia_buf.shape[2] != 3)
          throw std::runtime_error("inertiaMatrices must have shape (n,3,3)");
-     size_t n_inertia = inertia_buf.shape[0];
+     Eigen::Index n_inertia = inertia_buf.shape[0];
      if(n_inertia != n)
          throw std::runtime_error("Number of inertia matrices must equal number of masses");
      std::vector<Eigen::Matrix3d> inertiaMatrices;
      inertiaMatrices.reserve(n);
      double* inertia_ptr = static_cast<double*>(inertia_buf.ptr);
-     for (size_t i = 0; i < n; i++) {
+     for (Eigen::Index i = 0; i < n; i++) {
          Eigen::Matrix3d I;
-         for (size_t r = 0; r < 3; r++) {
-             for (size_t c = 0; c < 3; c++) {
+         for (Eigen::Index r = 0; r < 3; r++) {
+             for (Eigen::Index c = 0; c < 3; c++) {
                  I(r, c) = inertia_ptr[i * 9 + r * 3 + c];
              }
          }
@@ -374,13 +364,13 @@
          throw std::runtime_error("comPositions must be a 2D numpy array with shape (n,3)");
      if(com_buf.shape[1] != 3)
          throw std::runtime_error("comPositions must have shape (n,3)");
-     size_t n_com = com_buf.shape[0];
+     Eigen::Index n_com = com_buf.shape[0];
      if(n_com != n)
          throw std::runtime_error("Number of comPositions must equal number of masses");
      std::vector<Eigen::Vector3d> comPositions;
      comPositions.reserve(n);
      double* com_ptr = static_cast<double*>(com_buf.ptr);
-     for (size_t i = 0; i < n; i++) {
+     for (Eigen::Index i = 0; i < n; i++) {
          Eigen::Vector3d v;
          v(0) = com_ptr[i * 3 + 0];
          v(1) = com_ptr[i * 3 + 1];
@@ -404,10 +394,10 @@
      auto masses_buf = masses_array.request();
      if(masses_buf.ndim != 1)
          throw std::runtime_error("masses must be a 1D numpy array");
-     size_t n = masses_buf.shape[0];
+     Eigen::Index n = masses_buf.shape[0];
      std::vector<double> masses(n);
      double* masses_ptr = static_cast<double*>(masses_buf.ptr);
-     for (size_t i = 0; i < n; i++) {
+     for (Eigen::Index i = 0; i < n; i++) {
          masses[i] = masses_ptr[i];
      }
  
@@ -417,16 +407,16 @@
          throw std::runtime_error("inertiaMatrices must be a 3D numpy array with shape (n,3,3)");
      if(inertia_buf.shape[1] != 3 || inertia_buf.shape[2] != 3)
          throw std::runtime_error("inertiaMatrices must have shape (n,3,3)");
-     size_t n_inertia = inertia_buf.shape[0];
+     Eigen::Index n_inertia = inertia_buf.shape[0];
      if(n_inertia != n)
          throw std::runtime_error("Number of inertia matrices must equal number of masses");
      std::vector<Eigen::Matrix3d> inertiaMatrices;
      inertiaMatrices.reserve(n);
      double* inertia_ptr = static_cast<double*>(inertia_buf.ptr);
-     for (size_t i = 0; i < n; i++) {
+     for (Eigen::Index i = 0; i < n; i++) {
          Eigen::Matrix3d I;
-         for (size_t r = 0; r < 3; r++) {
-             for (size_t c = 0; c < 3; c++) {
+         for (Eigen::Index r = 0; r < 3; r++) {
+             for (Eigen::Index c = 0; c < 3; c++) {
                  I(r, c) = inertia_ptr[i * 9 + r * 3 + c];
              }
          }
@@ -439,13 +429,13 @@
          throw std::runtime_error("comPositions must be a 2D numpy array with shape (n,3)");
      if(com_buf.shape[1] != 3)
          throw std::runtime_error("comPositions must have shape (n,3)");
-     size_t n_com = com_buf.shape[0];
+     Eigen::Index n_com = com_buf.shape[0];
      if(n_com != n)
          throw std::runtime_error("Number of comPositions must equal number of masses");
      std::vector<Eigen::Vector3d> comPositions;
      comPositions.reserve(n);
      double* com_ptr = static_cast<double*>(com_buf.ptr);
-     for (size_t i = 0; i < n; i++) {
+     for (Eigen::Index i = 0; i < n; i++) {
          Eigen::Vector3d v;
          v(0) = com_ptr[i * 3 + 0];
          v(1) = com_ptr[i * 3 + 1];
@@ -457,7 +447,7 @@
      Eigen::MatrixXd D = computeD(q, masses, inertiaMatrices, comPositions, DHparams);
      Eigen::MatrixXd C = computeC(q, q_dot, masses, inertiaMatrices, comPositions, DHparams);
      Eigen::VectorXd g = compute_g(q, masses, comPositions, DHparams);
-     
+ 
      return py::make_tuple(D, C, g);
  }
  
@@ -474,7 +464,7 @@
            py::arg("comPositions"),
            py::arg("DHparams"),
            "Compute joint torques given robot state, parameters, and DH parameters.");
-     
+ 
      // Expose the getMatricesWrapper function to return D, C, and g.
      m.def("getMatrices", &getMatricesWrapper,
            py::arg("q"),
@@ -485,3 +475,4 @@
            py::arg("DHparams"),
            "Return the D, C, and g matrices for debugging purposes.");
  }
+ 

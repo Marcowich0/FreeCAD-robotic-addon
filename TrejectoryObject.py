@@ -205,8 +205,7 @@ class SolveTrajectoryCommand:
 
         solvePath()
         solveDynamics()
-        plotTorques()
-        plotPositionVelocityAcceleration()
+        plotTrajectoryData()
 
 
 
@@ -422,28 +421,7 @@ def updateTorques():
     tau = [compute_torque.computeJointTorques(q, q_dot, q_ddot, M, InertiaMatrices, CenterOfMass, DHperameters) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
     sel.Torques = tau
 
-
-
-def plotTorques():
-    import matplotlib.pyplot as plt
-    sel = FreeCADGui.Selection.getSelection()[0]
-
-    # Use dark background style as a base
-    plt.style.use('dark_background')
-
-    # Override the facecolors to a dark gray
-    dark_gray = '#303030'
-    plt.rcParams['axes.facecolor'] = dark_gray
-    plt.rcParams['figure.facecolor'] = dark_gray
-
-    plt.plot(sel.t, sel.Torques)
-    plt.grid(True, color='gray')  # Ensure grid lines are visible
-    plt.legend([f"Joint {i+1}" for i in range(len(sel.Torques[0]))])
-    plt.xlabel("Time (s)")
-    plt.ylabel("Torque (Nm)")
-    plt.show()
-
-def plotPositionVelocityAcceleration():
+def plotTrajectoryData():
     import matplotlib.pyplot as plt
     import numpy as np
     from FreeCADGui import Selection
@@ -454,51 +432,82 @@ def plotPositionVelocityAcceleration():
     plt.rcParams['axes.facecolor'] = dark_gray
     plt.rcParams['figure.facecolor'] = dark_gray
 
+    # Helper function: insert NaNs where discontinuities occur to break the line
+    def insert_nan_breaks(x, y, threshold=np.pi):
+        new_x = [x[0]]
+        new_y = [y[0]]
+        for i in range(1, len(x)):
+            if np.abs(y[i] - y[i - 1]) > threshold:
+                new_x.append(np.nan)
+                new_y.append(np.nan)
+            new_x.append(x[i])
+            new_y.append(y[i])
+        return np.array(new_x), np.array(new_y)
+
     # Get the current selected trajectory object
     sel = Selection.getSelection()[0]
 
-    # Convert lists to numpy arrays for easier manipulation
+    # Convert lists to numpy arrays
     t = np.array(sel.t)
+    # Convert angles from degrees to radians and wrap into [-pi, pi]
     angles = np.deg2rad(sel.Angles)
     q_dot = np.array(sel.q_dot)
     q_ddot = np.array(sel.q_ddot)
+    torques = np.array(sel.Torques)
 
-    # Ensure the arrays are two-dimensional.
-    # If only one joint is present, reshape to (N, 1)
+    # Ensure that angles, velocities, and accelerations are 2D arrays (each column represents a joint)
     if angles.ndim == 1:
         angles = angles.reshape(-1, 1)
         q_dot = q_dot.reshape(-1, 1)
         q_ddot = q_ddot.reshape(-1, 1)
-    
     n_joints = angles.shape[1]
 
-    # Create a figure with 3 vertically-stacked subplots sharing the time axis
-    fig, axs = plt.subplots(3, 1, sharex=True, figsize=(10, 8))
+    # Create a figure with 4 vertically-stacked subplots sharing the time axis
+    fig, axs = plt.subplots(4, 1, sharex=True, figsize=(8, 10))
 
-    # --- Plot Joint Positions ---
+    # --- Joint Positions ---
     for j in range(n_joints):
-        axs[0].plot(t, angles[:, j], label=f'Joint {j+1}')
+        # Wrap the joint angles to [-pi, pi]
+        wrapped = (angles[:, j] + np.pi) % (2 * np.pi) - np.pi
+        # Insert NaNs at discontinuities to avoid vertical lines
+        new_t, new_wrapped = insert_nan_breaks(t, wrapped, threshold=np.pi)
+        axs[0].plot(new_t, new_wrapped, label=f'Joint {j+1}')
     axs[0].set_ylabel('Position (rad)')
     axs[0].set_title('Joint Positions')
     axs[0].grid(True, color='gray')
-    axs[0].legend()
+    axs[0].set_ylim(-np.pi, np.pi)
+    ticks = [-np.pi, -np.pi/2, 0, np.pi/2, np.pi]
+    labels = [r'$-\pi$', r'$-\pi/2$', '0', r'$\pi/2$', r'$\pi$']
+    axs[0].set_yticks(ticks)
+    axs[0].set_yticklabels(labels)
+    axs[0].legend(loc='upper right')
 
-    # --- Plot Joint Velocities ---
+    # --- Joint Velocities ---
     for j in range(n_joints):
         axs[1].plot(t, q_dot[:, j], label=f'Joint {j+1}')
     axs[1].set_ylabel('Velocity (rad/s)')
     axs[1].set_title('Joint Velocities')
     axs[1].grid(True, color='gray')
-    axs[1].legend()
+    axs[1].legend(loc='upper right')
 
-    # --- Plot Joint Accelerations ---
+    # --- Joint Accelerations ---
     for j in range(n_joints):
         axs[2].plot(t, q_ddot[:, j], label=f'Joint {j+1}')
     axs[2].set_ylabel('Acceleration (rad/s²)')
-    axs[2].set_xlabel('Time (s)')
     axs[2].set_title('Joint Accelerations')
     axs[2].grid(True, color='gray')
-    axs[2].legend()
+    axs[2].legend(loc='upper right')
+
+    # --- Joint Torques ---
+    if torques.ndim == 1:
+        torques = torques.reshape(-1, 1)
+    for j in range(torques.shape[1]):
+        axs[3].plot(t, torques[:, j], label=f'Joint {j+1}')
+    axs[3].set_ylabel('Torque (Nm)')
+    axs[3].set_xlabel('Time (s)')
+    axs[3].set_title('Joint Torques')
+    axs[3].grid(True, color='gray')
+    axs[3].legend(loc='upper right')
 
     plt.tight_layout()
     plt.show()

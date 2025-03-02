@@ -28,7 +28,15 @@
 ##FreeCAD.addExportType("My own format (*.own)", "exportOwn")
 print("I am executing some stuff here when FreeCAD starts!")
 
-
-
 import sys
-sys.path.append(r"D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\build\Release")
+import os
+import inspect
+
+# Get the directory where the init file resides
+current_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda: 0)))
+
+# Build the relative path to the Release folder
+module_path = os.path.join(current_dir, "robot_dynamics_module", "build", "Release")
+
+# Add the module path to sys.path
+sys.path.append(module_path)

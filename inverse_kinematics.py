@@ -6,6 +6,9 @@ from secondary_utils import checkCollision
 from forward_kinematics import getDHTransformations, getJacobian
 import numpy as np
 import math
+
+
+
 import inverse_kinematics_cpp
 class ToTargetPointCommand:
     """Command to solve inverse kinematics for a target position."""

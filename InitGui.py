@@ -1,20 +1,22 @@
 import FreeCAD
 import FreeCADGui
 
-
-import RobotObject
-import TrejectoryObject
+import inspect
+import sys  
+import os
 
 import qt_angle_sliders
 import qt_orientation_sliders
 import qt_move_end_effector
+
+import RobotObject     
+import TrejectoryObject
 
 import forward_kinematics
 import inverse_kinematics
 
 import dynamics
 
-import os
 
 class Robotics (Workbench):
     MenuText = "Robotics"
@@ -22,6 +24,9 @@ class Robotics (Workbench):
     #Icon = """paste here the contents of a 16x16 xpm icon"""
 
     def Initialize(self):
+        for path in sys.path:
+            print(path)
+        
         self.__class__.Icon = os.path.join(FreeCAD.getHomePath(), 'Mod', 'FreeCAD-robotic-addon', 'Resources', 'icons', 'robotArm.svg')
 
         

@@ -25,7 +25,7 @@ class Trajectory:
         obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body")
         obj.addProperty("App::PropertyLinkSub", "Edge", "Trajectory", "Link to an Edge")
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
-        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 100
+        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 1
 
         obj.addProperty("App::PropertyPythonObject", "t", "Time", "List of times at each point").t = []
         obj.addProperty("App::PropertyPythonObject", "Angles", "Trajectory", "List of angles").Angles = []
@@ -167,7 +167,7 @@ def computeTrajectoryPoints(trajectory_obj):
     
     # Determine the number of points based on the edge length
     n_points = trajectory_obj.NumberOfPoints
-    trajectory_obj.DistanceBetweenPoints = edge.Length/n_points
+    trajectory_obj.DistanceBetweenPoints = (edge.Length * 1e-3)/n_points
     if n_points < 2:
          n_points = 2  # Ensure at least two points
 
@@ -206,6 +206,7 @@ class SolveTrajectoryCommand:
         solvePath()
         solveDynamics()
         plotTorques()
+        plotPositionVelocityAcceleration()
 
 
 
@@ -351,7 +352,6 @@ FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 
 import inverse_kinematics_cpp
 from main_utils import vec_to_numpy
-from inverse_kinematics import solve_ik_old
 
 def solvePath():
     
@@ -369,18 +369,13 @@ def solvePath():
         return
     angles = []
 
-    print("printing dir")   
-    print(dir(inverse_kinematics_cpp))
     for i, point in enumerate(points):
         if i==0:
             q = np.deg2rad(robot.Angles)
-            q = solve_ik_old(q, point, target_dir)
+            q = solve_ik(q, point, target_dir, DHperameters)
         else:
             print(f"point: {i}")
-            displayMatrix(q)
-            displayMatrix(point)
-            displayMatrix(target_dir)
-            q = solve_ik_old(q, point, target_dir)
+            converged, q = inverse_kinematics_cpp.solveIK(q, point, target_dir, DHperameters)
             #print(f"solved as {q}, converged: {converged}")
         angles.append(np.rad2deg(q).tolist())
     sel.Angles = angles
@@ -389,6 +384,7 @@ def solvePath():
     sel.t = np.cumsum(time)
     print("Trajectory solved and angles stored.")
     robot.Angles = angles[-1]
+    displayMatrix(sel.t)
 
 
 def solveDynamics():
@@ -402,7 +398,7 @@ def updateVelocityAndAcceleration():
         print("No angles calculated!")
         return
     
-    q = sel.Angles
+    q = np.deg2rad(sel.Angles)
     q_dot = np.gradient(q, sel.t, axis=0)
     q_ddot = np.gradient(q_dot, sel.t, axis=0)
     sel.q_dot = q_dot
@@ -416,7 +412,6 @@ def updateTorques():
     q = np.deg2rad(sel.Angles)
     q_dot = sel.q_dot
     q_ddot = sel.q_ddot
-    #tau = [computeJointTorques(q, q_dot, q_ddot) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
     M = np.array(robot.Masses[1:])
     InertiaMatrices = np.array(robot.InertiaMatrices[1:])
     CenterOfMass = np.array(robot.CenterOfMass[1:])
@@ -426,6 +421,7 @@ def updateTorques():
     DHperameters[:,1:3] /= 1000
     tau = [compute_torque.computeJointTorques(q, q_dot, q_ddot, M, InertiaMatrices, CenterOfMass, DHperameters) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
     sel.Torques = tau
+
 
 
 def plotTorques():
@@ -446,6 +442,67 @@ def plotTorques():
     plt.xlabel("Time (s)")
     plt.ylabel("Torque (Nm)")
     plt.show()
+
+def plotPositionVelocityAcceleration():
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from FreeCADGui import Selection
+
+    # Use dark background style as a base
+    plt.style.use('dark_background')
+    dark_gray = '#303030'
+    plt.rcParams['axes.facecolor'] = dark_gray
+    plt.rcParams['figure.facecolor'] = dark_gray
+
+    # Get the current selected trajectory object
+    sel = Selection.getSelection()[0]
+
+    # Convert lists to numpy arrays for easier manipulation
+    t = np.array(sel.t)
+    angles = np.deg2rad(sel.Angles)
+    q_dot = np.array(sel.q_dot)
+    q_ddot = np.array(sel.q_ddot)
+
+    # Ensure the arrays are two-dimensional.
+    # If only one joint is present, reshape to (N, 1)
+    if angles.ndim == 1:
+        angles = angles.reshape(-1, 1)
+        q_dot = q_dot.reshape(-1, 1)
+        q_ddot = q_ddot.reshape(-1, 1)
+    
+    n_joints = angles.shape[1]
+
+    # Create a figure with 3 vertically-stacked subplots sharing the time axis
+    fig, axs = plt.subplots(3, 1, sharex=True, figsize=(10, 8))
+
+    # --- Plot Joint Positions ---
+    for j in range(n_joints):
+        axs[0].plot(t, angles[:, j], label=f'Joint {j+1}')
+    axs[0].set_ylabel('Position (rad)')
+    axs[0].set_title('Joint Positions')
+    axs[0].grid(True, color='gray')
+    axs[0].legend()
+
+    # --- Plot Joint Velocities ---
+    for j in range(n_joints):
+        axs[1].plot(t, q_dot[:, j], label=f'Joint {j+1}')
+    axs[1].set_ylabel('Velocity (rad/s)')
+    axs[1].set_title('Joint Velocities')
+    axs[1].grid(True, color='gray')
+    axs[1].legend()
+
+    # --- Plot Joint Accelerations ---
+    for j in range(n_joints):
+        axs[2].plot(t, q_ddot[:, j], label=f'Joint {j+1}')
+    axs[2].set_ylabel('Acceleration (rad/s²)')
+    axs[2].set_xlabel('Time (s)')
+    axs[2].set_title('Joint Accelerations')
+    axs[2].grid(True, color='gray')
+    axs[2].legend()
+
+    plt.tight_layout()
+    plt.show()
+
 
 
 from forward_kinematics import getDHTransformations, getJacobianCenter
@@ -471,12 +528,11 @@ class AddTrajectoryCommand2:
         DHperameters[:,0] = 0
         DHperameters = DHperameters.astype(float)
         DHperameters[:,1:3] /= 1000
-        displayMatrix(DHperameters)
 
 
         q_ddot[0] = 1
         torques = compute_torque.computeJointTorques(q, q_dot, q_ddot, M, InertiaMatrices, CenterOfMass, DHperameters)
-        D, C, g = compute_torque.getMatrices(q, q_dot, M, InertiaMatrices, CenterOfMass, DHperameters)
+        D, C, g = compute_torque.getMatrices(q, np.ones_like(q), M, InertiaMatrices, CenterOfMass, DHperameters)
         print("Computed D matrix [C++]:")
         displayMatrix(D)
         print("Computed C matrix [C++]:")

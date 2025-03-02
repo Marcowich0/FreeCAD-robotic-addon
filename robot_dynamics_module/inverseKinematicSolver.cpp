@@ -103,11 +103,6 @@
  // to move the manipulator's end-effector to (target_pos) and align its Z-axis
  // with (target_dir), if target_dir is approximately unit length.
  //
- // Hard-coded parameters:
- //   - max_iterations      = 100
- //   - tolerance           = 0.001
- //   - damping             = 0.01
- //   - orientation_weight  = 1.0
  //
  // Returns (converged, final_q). Angles are in radians.
  std::pair<bool, Eigen::VectorXd> solveIK(Eigen::VectorXd q,
@@ -116,8 +111,8 @@
     const Eigen::MatrixXd &DHparams)
 {
 // Hard-coded solver parameters
-const int max_iterations = 300;
-const double tolerance   = 0.1;
+const Eigen::Index max_iterations = 500;
+const double tolerance   = 1e-6;
 const double damping     = 0.1;   // Damping factor
 const double orientation_weight = 1.0;
 // Check if the provided target_dir is near unit length
@@ -125,7 +120,7 @@ bool target_active = (std::fabs(target_dir.norm() - 1.0) < 1e-4);
 
 bool converged = false;
 
-for (int iter = 0; iter < max_iterations; ++iter) {
+for (Eigen::Index iter = 0; iter < max_iterations; ++iter) {
 // Get forward kinematics
 auto T_arr = getDHTransformations(q, DHparams);
 
@@ -179,7 +174,7 @@ J = J_full.block(0, 0, 3, J_full.cols());
 }
 
 // Damped least squares: J_pseudo = J^T * (J*J^T + λ^2 I)^{-1}
-const int m = J.rows();
+const Eigen::Index m = J.rows();
 Eigen::MatrixXd JJT = J * J.transpose();
 Eigen::MatrixXd damping_matrix = (damping * damping)
     * Eigen::MatrixXd::Identity(m, m);
@@ -221,4 +216,3 @@ return std::make_pair(converged, q);
            "Solve inverse kinematics using a damped LS approach with fixed iteration/damping/tolerance.\n"
            "Returns (converged, final_angles_in_radians).");
  }
- 

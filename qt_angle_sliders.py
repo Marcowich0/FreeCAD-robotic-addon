@@ -40,7 +40,7 @@ class RobotAnglesDialog(QtGui.QDialog):
             row_layout = QtGui.QHBoxLayout(row_widget)
             
             # Joint label (e.g., q1, q2, …)
-            joint_label = QtGui.QLabel(f"q{i+1}")
+            joint_label = QtGui.QLabel(f"θ{i+1}")
             row_layout.addWidget(joint_label)
             
             # Slider setup: its range is relative to the offset.

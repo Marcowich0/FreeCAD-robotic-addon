@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\FreeCAD\Mod\FreeCAD-robotic-addon\build\CMakeFiles\378603aab1b5d5e75607024fa0aba5dc\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{503895A4-CC79-3EDE-94E2-D734F22174AE}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

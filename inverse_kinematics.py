@@ -111,9 +111,7 @@ def solve_ik_old(q, target_pos, target_dir):
     tolerance=0.1
     damping=0.1
     orientation_weight=1.0
-    collision = True
 
-    robot = get_robot()
     target_active = abs(np.linalg.norm(target_dir) - 1) < 1e-4
         
     for iteration in range(max_iterations):
@@ -145,18 +143,7 @@ def solve_ik_old(q, target_pos, target_dir):
         # Calculate total error
         total_error = np.linalg.norm(delta_x)
         if total_error < tolerance:
-            robot.Angles = np.rad2deg(q).tolist()
-            FreeCAD.ActiveDocument.recompute()
-            if collision and checkCollision():
-                q = [np.random.uniform(-np.pi, np.pi) for _ in range(len(q))]
-
-            else:
-                FreeCAD.Console.PrintMessage(
-                    f"IK converged after {iteration+1} iterations\n"
-                    f"Position error: {position_error:.2f} mm"
-                    + (f", Orientation error: {orientation_error:.4f} rad" if target_dir.any() else "") + "\n"
-                )
-                return q
+            return q
         
         # Calculate Jacobian at current position
         J_full = getJacobian(q, SI = True)

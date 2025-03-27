@@ -112,90 +112,63 @@ std::pair<bool, Eigen::VectorXd> solveIK(Eigen::VectorXd q,
                                          const Eigen::Vector3d &target_dir,
                                          const Eigen::MatrixXd &DHparams)
 {
-    // Hard-coded solver parameters
     const Eigen::Index max_iterations = 500;
     const double tolerance = 1e-6;
-    const double damping = 0.1; // Damping factor
+    const double damping = 0.1;
     const double orientation_weight = 1.0;
-    // Check if the provided target_dir is near unit length
-    bool target_active = (std::fabs(target_dir.norm() - 1.0) < 1e-4);
+    const double alpha = 0.01; // null-space weight for smoothness
 
+    // Store the initial configuration
+    const Eigen::VectorXd q_init = q;
+
+    bool target_active = (std::fabs(target_dir.norm() - 1.0) < 1e-4);
     bool converged = false;
 
     for (Eigen::Index iter = 0; iter < max_iterations; ++iter)
     {
-        
-        // Get forward kinematics
         auto T_arr = getDHTransformations(q, DHparams);
-
-        // Current end-effector position
         Eigen::Vector3d current_pos = T_arr.back().block(0, 3, 3, 1);
-
-        // Position error
         Eigen::Vector3d delta_x_position = target_pos - current_pos;
-        double position_error = delta_x_position.norm();
 
-        // Build the task-space error vector
         Eigen::VectorXd delta_x;
-        double orientation_error = 0.0;
-
         if (target_active)
         {
-            // Current end-effector Z-axis
             Eigen::Vector3d current_dir = T_arr.back().block(0, 2, 3, 1);
-
-            // Orientation error via cross product
             Eigen::Vector3d orientation_error_vec = current_dir.cross(target_dir);
             Eigen::Vector3d delta_x_orientation = orientation_weight * orientation_error_vec;
-            orientation_error = delta_x_orientation.norm();
 
-            // Combine position & orientation
             delta_x.resize(6);
             delta_x << delta_x_position, delta_x_orientation;
         }
         else
         {
-            // Only position
-            delta_x.resize(3);
             delta_x = delta_x_position;
         }
 
-        // Check total error
-        double total_error = delta_x.norm();
-        if (total_error < tolerance)
+        if (delta_x.norm() < tolerance)
         {
-            
             converged = true;
             break;
         }
 
-        // Compute Jacobian
         Eigen::MatrixXd J_full = getJacobian(q, DHparams);
+        Eigen::MatrixXd J = target_active ? J_full : J_full.block(0, 0, 3, J_full.cols());
 
-        // If orientation is active, use full 6xN, otherwise use top 3 rows
-        Eigen::MatrixXd J;
-        if (target_active)
-        {
-            J = J_full;
-        }
-        else
-        {
-            // Just take the linear part (rows 0..2)
-            J = J_full.block(0, 0, 3, J_full.cols());
-        }
-
-        // Damped least squares: J_pseudo = J^T * (J*J^T + λ^2 I)^{-1}
-        const Eigen::Index m = J.rows();
+        // Damped pseudoinverse
         Eigen::MatrixXd JJT = J * J.transpose();
-        Eigen::MatrixXd damping_matrix = (damping * damping) * Eigen::MatrixXd::Identity(m, m);
-        Eigen::MatrixXd invTerm = (JJT + damping_matrix).inverse();
+        Eigen::MatrixXd damping_matrix = (damping * damping) * Eigen::MatrixXd::Identity(J.rows(), J.rows());
+        Eigen::MatrixXd J_pseudo = J.transpose() * (JJT + damping_matrix).inverse();
 
-        Eigen::MatrixXd J_pseudo = J.transpose() * invTerm;
+        // Null-space projection
+        Eigen::MatrixXd I = Eigen::MatrixXd::Identity(q.size(), q.size());
+        Eigen::MatrixXd N = I - J_pseudo * J;
 
-        // Update joint angles
-        Eigen::VectorXd delta_theta = J_pseudo * delta_x;
+        // Smoothness optimization (pull toward initial configuration)
+        Eigen::VectorXd z = q_init - q;
+
+        // Full update with null-space term
+        Eigen::VectorXd delta_theta = J_pseudo * delta_x + alpha * N * z;
         q += delta_theta;
-        
     }
 
     return std::make_pair(converged, q);

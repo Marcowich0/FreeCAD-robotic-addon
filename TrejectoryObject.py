@@ -23,7 +23,7 @@ class Trajectory:
         # Add a property for linking to a Body (another FreeCAD object)
         obj.addProperty("App::PropertyString", "Type", "Trajectory", "Type of the object").Type = "Trajectory"
         obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body")
-        obj.addProperty("App::PropertyLinkSub", "Edge", "Trajectory", "Link to an Edge")
+        obj.addProperty("App::PropertyLinkSubList", "Edges", "Trajectory", "Link to an Edges").Edges = []
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
         obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 1
 
@@ -33,9 +33,7 @@ class Trajectory:
         obj.addProperty("App::PropertyPythonObject", "q_ddot", "Trajectory", "List of joint accelerations").q_ddot = []
         obj.addProperty("App::PropertyPythonObject", "Torques", "Trajectory", "List of joint torques").Torques = []
         
-
-        obj.addProperty("App::PropertyInteger", "NumberOfPoints", "Trajectory", "Number of points").NumberOfPoints = 100
-        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 0.0
+        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 10e-3
     
     def execute(self, obj):
         pass  # Recompute logic here
@@ -93,7 +91,7 @@ class AddTrajectoryCommand:
         trajectory_obj.ViewObject.Proxy = ViewProviderTrajectory(trajectory_obj.ViewObject)
 
         # Instead of calculating points now, only store the edge (and parent body)
-        selectEdgeForTrajectory(trajectory_obj)
+        selectEdgesForTrajectory(trajectory_obj)
 
         doc.recompute()
 
@@ -104,87 +102,113 @@ FreeCADGui.addCommand('AddTrajectoryCommand', AddTrajectoryCommand())
 
 # ---------------------------------------------------------------------------
 # New helper function: only stores the edge (and body) on the trajectory object.
-def selectEdgeForTrajectory(trajectory_obj):
-    selection = FreeCADGui.Selection.getSelectionEx()
-    
-    if not selection or not selection[0].SubElementNames:
-        print("Error: No selection or invalid selection.")
-        return
+def selectEdgesForTrajectory(trajectory_obj):
+    collected_edges = []
 
-    sel = selection[0]
-    subelement = sel.SubElementNames[0]
-    
-    if not subelement.startswith('Edge'):
-        print("Error: Please select an edge.")
-        return
+    for sel in FreeCADGui.Selection.getSelectionEx():
+        for subel_name in sel.SubElementNames:
+            collected_edges.append((sel.Object, subel_name))
 
-    obj = sel.Object
-    edge = obj.getSubObject(subelement)
-    
-    if not edge:
-        print("Error: Could not retrieve the selected edge.")
-        return
+    # Assign them directly
+    trajectory_obj.Edges = collected_edges
 
-    # Store the edge reference using PropertyLinkSub
-    trajectory_obj.Edge = (obj, subelement)
+    # If you still want to set Body, we look at the first entry's parents
+    if collected_edges:
+        obj = collected_edges[0][0]
+        for parent in obj.Parents:
+            if parent[0].Name == 'Assembly':
+                body_name = parent[1].split('.')[0]
+                trajectory_obj.Body = FreeCAD.ActiveDocument.getObject(body_name)
+                break
 
-    # Find parent body in assembly and store it (if applicable)
-    for parent in obj.Parents:
-        if parent[0].Name == 'Assembly':
-            body_name = parent[1].split('.')[0]
-            trajectory_obj.Body = FreeCAD.ActiveDocument.getObject(body_name)
-            break
+    print(f"Collected {len(collected_edges)} sub-elements in total.")
 
-    print("Edge selected for trajectory. Points will be computed during solve.")
+
+def chain_lists(list_of_lists):
+    arrs = [[np.array((v.x, v.y, v.z), float) for v in lst] for lst in list_of_lists]
+    chain = arrs.pop(0)  # take the first
+    while arrs:
+        best_dist = float('inf')
+        best_idx = -1
+        best_flip = False
+        best_prepend = False
+        for i, seg in enumerate(arrs):
+            cs, ce = chain[0], chain[-1]  # current chain start/end
+            ss, se = seg[0], seg[-1]      # segment start/end
+            # check 4 combos
+            d1 = np.linalg.norm(ce - ss)  # append normal
+            if d1 < best_dist: best_dist, best_idx, best_flip, best_prepend = d1, i, False, False
+            d2 = np.linalg.norm(ce - se)  # append reversed
+            if d2 < best_dist: best_dist, best_idx, best_flip, best_prepend = d2, i, True, False
+            d3 = np.linalg.norm(cs - ss)  # prepend reversed
+            if d3 < best_dist: best_dist, best_idx, best_flip, best_prepend = d3, i, True, True
+            d4 = np.linalg.norm(cs - se)  # prepend normal
+            if d4 < best_dist: best_dist, best_idx, best_flip, best_prepend = d4, i, False, True
+        chosen = arrs.pop(best_idx)
+        if best_flip:
+            chosen.reverse()
+        if best_prepend:
+            chain = chosen + chain
+        else:
+            chain = chain + chosen
+    return [FreeCAD.Vector(*p) for p in chain]
+
+
+
 
 # ---------------------------------------------------------------------------
 # New helper function: compute trajectory points from the stored edge.
 def computeTrajectoryPoints(trajectory_obj):
-    if not trajectory_obj.Edge:
+    if not trajectory_obj.Edges:
          print("Error: No edge stored in the trajectory object!")
          return []
     
     # Retrieve the stored reference (object and subelement name)
-    obj, subelement = trajectory_obj.Edge
-    edge_candidate = obj.getSubObject(subelement)
-    
-    # If getSubObject returns a tuple, take the first element.
-    if isinstance(edge_candidate, tuple):
-         edge = edge_candidate[0]
-    else:
-         edge = edge_candidate
-         
-    if not edge:
-         print("Error: Could not retrieve edge from stored reference.")
-         return []
-    
-    # Use the stored Body (if available) for the transformation; otherwise assume identity
-    if trajectory_obj.Body:
-         body = trajectory_obj.Body
-         o_A_ol = body.Placement.Matrix
-    else:
-         o_A_ol = FreeCAD.Matrix()
-    
-    # Determine the number of points based on the edge length
-    n_points = trajectory_obj.NumberOfPoints
-    trajectory_obj.DistanceBetweenPoints = (edge.Length * 1e-3)/n_points
-    if n_points < 2:
-         n_points = 2  # Ensure at least two points
+    point_list = []
+    for obj, sub in trajectory_obj.Edges:
+        for subelement in sub:
+            print("edge array")
+            print(obj, subelement)
+            edge_candidate = obj.getSubObject(subelement)
+            
+            # If getSubObject returns a tuple, take the first element.
+            if isinstance(edge_candidate, tuple):
+                edge = edge_candidate[0]
+            else:
+                edge = edge_candidate
+                
+            if not edge:
+                print("Error: Could not retrieve edge from stored reference.")
+                return []
+            
+            # Use the stored Body (if available) for the transformation; otherwise assume identity
+            if trajectory_obj.Body:
+                body = trajectory_obj.Body
+                o_A_ol = body.Placement.Matrix
+            else:
+                o_A_ol = FreeCAD.Matrix()
+            
+            # Determine the number of points based on the edge length
+            n_points = round(edge.Length * 1e-3 / trajectory_obj.DistanceBetweenPoints)
+            if n_points < 2:
+                n_points = 2  # Ensure at least two points
 
-    # Discretize based on the edge type
-    if isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
-         start = edge.Vertexes[0].Point
-         end = edge.Vertexes[-1].Point
-         points_local = [start + (end - start) * i/(n_points-1) for i in range(n_points)]
-    else:
-         points_local = edge.discretize(Number=n_points)
+            # Discretize based on the edge type
+            if isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
+                start = edge.Vertexes[0].Point
+                end = edge.Vertexes[-1].Point
+                points_local = [start + (end - start) * i/(n_points-1) for i in range(n_points)]
+            else:
+                points_local = edge.discretize(Number=n_points)
 
-    # Transform points to global coordinates using the body's placement
-    points_global = [o_A_ol.multVec(point) for point in points_local]
-    trajectory_obj.Points = points_global
+            # Transform points to global coordinates using the body's placement
+            points_global = [o_A_ol.multVec(point) for point in points_local]
+            print(f"Points on edge: {len(points_global)}")
+            point_list.append(points_global)
 
-    print(f"Computed {len(points_global)} trajectory points.")
-    return points_global
+    points = chain_lists(point_list)
+    trajectory_obj.Points = points
+    return points
 
 import cProfile
 import pstats
@@ -352,39 +376,49 @@ FreeCADGui.addCommand('StopTrajectoryCommand', StopTrajectoryCommand())
 import inverse_kinematics_cpp
 from main_utils import vec_to_numpy
 
+from scipy.interpolate import CubicSpline
+
 def solvePath():
-    
     sel = FreeCADGui.Selection.getSelection()[0]
     robot = get_robot()
-    DHperameters = np.array(robot.DHPerameters)
-    DHperameters[:,0] = 0
-    DHperameters = DHperameters.astype(float)
-    DHperameters[:,1:3] /= 1000
-    target_dir = vec_to_numpy(robot.EndEffectorOrientation)
-    # Compute the trajectory points from the stored edge
-    points = [vec_to_numpy(p)/1000 for p in computeTrajectoryPoints(sel)]
-    if not points:
-        print("No trajectory points computed!")
-        return
-    angles = []
 
-    for i, point in enumerate(points):
-        if i==0:
-            q = np.deg2rad(robot.Angles)
-            q = solve_ik(q, point, target_dir, DHperameters)
+    # IK as usual (raw discrete angles in degrees)
+    # ---------------------------------------------------------
+    DHraw = np.array(robot.DHPerameters, dtype=object)
+    DHraw[:, 0] = 0.0  # Overwrite the "theta_i" strings
+    DH = DHraw.astype(float)
+    DH[:, 1:3] /= 1000
+    dir_vec = vec_to_numpy(robot.EndEffectorOrientation)
+    pts = [vec_to_numpy(p)/1000 for p in computeTrajectoryPoints(sel)]
+    raw_angles = []
+    q = np.deg2rad(robot.Angles)
+
+    for i, pt in enumerate(pts):
+        if i == 0:
+            q = solve_ik(q, pt, dir_vec, DH)
         else:
-            print(f"point: {i}")
-            converged, q = inverse_kinematics_cpp.solveIK(q, point, target_dir, DHperameters)
-            #print(f"solved as {q}, converged: {converged}")
-        angles.append(np.rad2deg(q).tolist())
-    sel.Angles = angles
-        
-    time = [0, *[sel.DistanceBetweenPoints/sel.Velocity for _ in range(len(sel.Angles)-1)]]
-    sel.t = np.cumsum(time)
-    print("Trajectory solved and angles stored.")
-    robot.Angles = angles[-1]
-    displayMatrix(sel.t)
+            _, q = inverse_kinematics_cpp.solveIK(q, pt, dir_vec, DH)
+        raw_angles.append(np.rad2deg(q))
 
+    # Uniform time array (1 step per point)
+    dt = sel.DistanceBetweenPoints / sel.Velocity
+    t_raw = np.linspace(0, dt*(len(raw_angles)-1), len(raw_angles))
+
+    # --- Fit a cubic spline & upsample ---
+    angles_arr = np.array(raw_angles)  # shape (N, n_joints)
+    up_factor = 4
+    t_up = np.linspace(t_raw[0], t_raw[-1], up_factor*(len(t_raw)-1)+1)
+    angles_up = np.zeros((len(t_up), angles_arr.shape[1]))
+
+    for j in range(angles_arr.shape[1]):
+        cs = CubicSpline(t_raw, angles_arr[:, j])  # fit cubic
+        angles_up[:, j] = cs(t_up)                 # evaluate
+
+    # Store smoothed, upsampled trajectory
+    sel.Angles = angles_up.tolist()
+    sel.t = t_up
+    robot.Angles = sel.Angles[-1]
+    print("Spline-fitted angles stored.")
 
 def solveDynamics():
     updateVelocityAndAcceleration()
@@ -407,10 +441,6 @@ def updateVelocityAndAcceleration():
 
 def updateTorques():
     robot = get_robot()
-    sel = FreeCADGui.Selection.getSelection()[0]
-    q = np.deg2rad(sel.Angles)
-    q_dot = sel.q_dot
-    q_ddot = sel.q_ddot
     M = np.array(robot.Masses[1:])
     InertiaMatrices = np.array(robot.InertiaMatrices[1:])
     CenterOfMass = np.array(robot.CenterOfMass[1:])
@@ -418,6 +448,13 @@ def updateTorques():
     DHperameters[:,0] = 0
     DHperameters = DHperameters.astype(float)
     DHperameters[:,1:3] /= 1000
+
+
+    sel = FreeCADGui.Selection.getSelection()[0]
+    q = np.deg2rad(sel.Angles)
+    q_dot = sel.q_dot
+    q_ddot = sel.q_ddot
+
     tau = [compute_torque.computeJointTorques(q, q_dot, q_ddot, M, InertiaMatrices, CenterOfMass, DHperameters) for q, q_dot, q_ddot in zip(q, q_dot, q_ddot)]
     sel.Torques = tau
 

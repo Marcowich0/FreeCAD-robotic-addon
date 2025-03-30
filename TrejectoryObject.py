@@ -32,8 +32,11 @@ class Trajectory:
         obj.addProperty("App::PropertyPythonObject", "q_dot", "Trajectory", "List of joint velocities").q_dot = []
         obj.addProperty("App::PropertyPythonObject", "q_ddot", "Trajectory", "List of joint accelerations").q_ddot = []
         obj.addProperty("App::PropertyPythonObject", "Torques", "Trajectory", "List of joint torques").Torques = []
+
+        obj.addProperty("App::PropertyFloat", "smoothing", "Trajectory", "Smoothing factor").smoothing = 1
+        obj.addProperty("App::PropertyFloat", "alpha", "Trajectory", "Pre-path extension").alpha = 0.1
         
-        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 10e-3
+        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 5e-3
     
     def execute(self, obj):
         pass  # Recompute logic here
@@ -118,6 +121,7 @@ def selectEdgesForTrajectory(trajectory_obj):
         for parent in obj.Parents:
             if parent[0].Name == 'Assembly':
                 body_name = parent[1].split('.')[0]
+                print(f"Found parent body: {body_name}")
                 trajectory_obj.Body = FreeCAD.ActiveDocument.getObject(body_name)
                 break
 
@@ -125,7 +129,8 @@ def selectEdgesForTrajectory(trajectory_obj):
 
 
 def chain_lists(list_of_lists):
-    arrs = [[np.array((v.x, v.y, v.z), float) for v in lst] for lst in list_of_lists]
+    #arrs = [[np.array((v.x, v.y, v.z), float) for v in lst] for lst in list_of_lists]
+    arrs = list_of_lists
     chain = arrs.pop(0)  # take the first
     while arrs:
         best_dist = float('inf')
@@ -148,9 +153,9 @@ def chain_lists(list_of_lists):
         if best_flip:
             chosen.reverse()
         if best_prepend:
-            chain = chosen + chain
+            chain = chosen[:-1] + chain
         else:
-            chain = chain + chosen
+            chain = chain + chosen[1:]
     return [FreeCAD.Vector(*p) for p in chain]
 
 
@@ -177,16 +182,11 @@ def computeTrajectoryPoints(trajectory_obj):
             else:
                 edge = edge_candidate
                 
-            if not edge:
-                print("Error: Could not retrieve edge from stored reference.")
-                return []
-            
-            # Use the stored Body (if available) for the transformation; otherwise assume identity
-            if trajectory_obj.Body:
-                body = trajectory_obj.Body
-                o_A_ol = body.Placement.Matrix
-            else:
-                o_A_ol = FreeCAD.Matrix()
+            from main_utils import mat_to_numpy
+            body = trajectory_obj.Body
+            o_A_ol = mat_to_numpy(body.Placement.Matrix)
+            print("Matrix used for transformation")
+            displayMatrix(o_A_ol)
             
             # Determine the number of points based on the edge length
             n_points = round(edge.Length * 1e-3 / trajectory_obj.DistanceBetweenPoints)
@@ -202,7 +202,7 @@ def computeTrajectoryPoints(trajectory_obj):
                 points_local = edge.discretize(Number=n_points)
 
             # Transform points to global coordinates using the body's placement
-            points_global = [o_A_ol.multVec(point) for point in points_local]
+            points_global = [(np.append(vec_to_numpy(point),1))[:3] for point in points_local]
             print(f"Points on edge: {len(points_global)}")
             point_list.append(points_global)
 
@@ -228,7 +228,7 @@ class SolveTrajectoryCommand:
         profiler.enable()
 
         solvePath()
-        solveDynamics()
+        updateTorques()
         plotTrajectoryData()
 
 
@@ -378,65 +378,78 @@ from main_utils import vec_to_numpy
 
 from scipy.interpolate import CubicSpline
 
+from scipy.interpolate import splprep, splev
+from forward_kinematics import getJacobian
+
 def solvePath():
     sel = FreeCADGui.Selection.getSelection()[0]
     robot = get_robot()
 
-    # IK as usual (raw discrete angles in degrees)
-    # ---------------------------------------------------------
+    # Prepare DH parameters
     DHraw = np.array(robot.DHPerameters, dtype=object)
-    DHraw[:, 0] = 0.0  # Overwrite the "theta_i" strings
+    DHraw[:, 0] = 0.0
     DH = DHraw.astype(float)
     DH[:, 1:3] /= 1000
-    dir_vec = vec_to_numpy(robot.EndEffectorOrientation)
-    pts = [vec_to_numpy(p)/1000 for p in computeTrajectoryPoints(sel)]
-    raw_angles = []
-    q = np.deg2rad(robot.Angles)
+    target_dir = vec_to_numpy(robot.EndEffectorOrientation)
 
-    for i, pt in enumerate(pts):
-        if i == 0:
-            q = solve_ik(q, pt, dir_vec, DH)
-        else:
-            _, q = inverse_kinematics_cpp.solveIK(q, pt, dir_vec, DH)
-        raw_angles.append(np.rad2deg(q))
-
-    # Uniform time array (1 step per point)
-    dt = sel.DistanceBetweenPoints / sel.Velocity
-    t_raw = np.linspace(0, dt*(len(raw_angles)-1), len(raw_angles))
-
-    # --- Fit a cubic spline & upsample ---
-    angles_arr = np.array(raw_angles)  # shape (N, n_joints)
-    up_factor = 4
-    t_up = np.linspace(t_raw[0], t_raw[-1], up_factor*(len(t_raw)-1)+1)
-    angles_up = np.zeros((len(t_up), angles_arr.shape[1]))
-
-    for j in range(angles_arr.shape[1]):
-        cs = CubicSpline(t_raw, angles_arr[:, j])  # fit cubic
-        angles_up[:, j] = cs(t_up)                 # evaluate
-
-    # Store smoothed, upsampled trajectory
-    sel.Angles = angles_up.tolist()
-    sel.t = t_up
-    robot.Angles = sel.Angles[-1]
-    print("Spline-fitted angles stored.")
-
-def solveDynamics():
-    updateVelocityAndAcceleration()
-    updateTorques()
-
-
-def updateVelocityAndAcceleration():
-    sel = FreeCADGui.Selection.getSelection()[0]
-    if not sel.Angles:
-        print("No angles calculated!")
+    # 1) Get raw 3D points (in meters)
+    raw_pts = [vec_to_numpy(p)/1000.0 for p in computeTrajectoryPoints(sel)]
+    if len(raw_pts) < 2:
+        print("Not enough points!")
         return
-    
-    q = np.deg2rad(sel.Angles)
-    q_dot = np.gradient(q, sel.t, axis=0)
-    q_ddot = np.gradient(q_dot, sel.t, axis=0)
-    sel.q_dot = q_dot
-    sel.q_ddot = q_ddot
-    print("Velocity and acceleration updated.")
+    pts_np = np.array(raw_pts).T  # shape (3, N)
+
+    # 2) Fit a parametric spline to the raw points
+    # 'smoothing' controls rounding; 'alpha' extends the path before the computed path
+
+    tck, u = splprep(pts_np, s=(sel.smoothing*1e-6))
+    num_sample = len(raw_pts) * 4
+    u_new = np.linspace(-sel.alpha, 1, num_sample)
+    smooth_pts = np.array(splev(u_new, tck, ext=3)).T  # shape (M,3)
+
+    # 3) Reparameterize by arc-length to compute time stamps (assuming constant speed)
+    arc = np.zeros(len(smooth_pts))
+    for i in range(1, len(smooth_pts)):
+        arc[i] = arc[i-1] + np.linalg.norm(smooth_pts[i] - smooth_pts[i-1])
+    t_array = arc / sel.Velocity  # time = arc length / speed
+
+    # 4) Compute first and second derivatives via finite differences
+    x_dot = np.gradient(smooth_pts, t_array, axis=0)
+
+    # 5) Solve inverse kinematics along the smooth path
+    q_list = []
+    angles_deg = []
+    q = np.deg2rad(robot.Angles)
+    for i, p in enumerate(smooth_pts):
+        if i == 0:
+            q = solve_ik(q, p, target_dir, DH)
+        else:
+            converged, q = inverse_kinematics_cpp.solveIK(q, p, target_dir, DH)
+        q_list.append(q)
+        angles_deg.append(np.rad2deg(q).tolist())
+
+    # 6) Compute joint velocities using the Jacobian from forward_kinematics
+    q_dot_list = []
+    for i, q in enumerate(q_list):
+        J = getJacobian(q)
+        if J.ndim > 2:
+            J = J[0]
+        J_pos = J[0:3, :]  # take only the position rows
+        q_dot = np.linalg.pinv(J_pos).dot(x_dot[i])
+        q_dot_list.append(q_dot)
+    q_dot_arr = np.array(q_dot_list)
+    q_ddot_arr = np.gradient(q_dot_arr, t_array, axis=0)
+
+    # 7) Store results in the trajectory object and update the robot
+    sel.Angles = angles_deg
+    sel.t = t_array
+    sel.q_dot = q_dot_arr
+    sel.q_ddot = q_ddot_arr
+    robot.Angles = angles_deg[-1]
+
+    print("Trajectory solved with parametric smoothing and pre-path extension.")
+    displayMatrix(sel.t)
+
 
 
 def updateTorques():
@@ -548,10 +561,6 @@ def plotTrajectoryData():
 
     plt.tight_layout()
     plt.show()
-
-
-
-from forward_kinematics import getDHTransformations, getJacobianCenter
 
 import compute_torque
 

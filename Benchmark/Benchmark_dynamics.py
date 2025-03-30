@@ -10,7 +10,7 @@ from matplotlib.ticker import AutoMinorLocator
 import csv
 
 # Path configuration
-current_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda: 0)))
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0))))
 module_path = os.path.join(current_dir, "robot_dynamics_module", "build", "Release")
 sys.path.append(module_path)
 
@@ -231,7 +231,7 @@ def plot_performance_line(results):
     plt.grid(True, which='both', linestyle=':')
     plt.tight_layout()
     #plt.savefig('torque_performance_comparison.png', dpi=300)
-    # plt.show()  # Uncomment if you want to see the plot immediately.
+    plt.show()  # Uncomment if you want to see the plot immediately.
 
 def save_results_to_csv(results, filename="torque_performance_comparison.csv"):
     """
@@ -259,7 +259,7 @@ def save_results_to_csv(results, filename="torque_performance_comparison.csv"):
             ])
 
 if __name__ == "__main__":
-    max_dof = 2**7  # 128
+    max_dof = 2**5  # 128
     runs_per_dof = 100
     
     results = benchmark_parallel(max_dof, runs_per_dof)
@@ -275,7 +275,7 @@ if __name__ == "__main__":
             print(f"{dof:<5} | {len(cpp):<8} | {np.median(cpp_ms):<15.3f} | {np.percentile(cpp_ms, 95):<14.3f} | {np.median(py_ms):<15.3f} | {np.percentile(py_ms, 95):<14.3f}")
     
     # Save a CSV file for LaTeX plotting:
-    save_results_to_csv(results, filename="Benchmark_dynamics_result.csv")
+    save_results_to_csv(results, filename="data/Benchmark_dynamics_result.csv")
     
     # Optionally, create and save a Matplotlib plot:
     plot_performance_line(results)

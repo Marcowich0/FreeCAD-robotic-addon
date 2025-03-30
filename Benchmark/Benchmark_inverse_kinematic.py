@@ -9,7 +9,7 @@ from functools import partial
 from matplotlib.ticker import AutoMinorLocator
 
 # Path configuration
-current_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0))))
 module_path = os.path.join(current_dir, "robot_dynamics_module", "build", "Release")
 sys.path.append(module_path)
 
@@ -268,12 +268,12 @@ def plot_performance_line(results):
     plt.title('IK Solver Performance: C++ vs. Python Implementation', fontsize=14)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('ik_solver_comparison_lineplot.png', dpi=300)
+    #plt.savefig('ik_solver_comparison_lineplot.png', dpi=300)
     plt.show()
 
 import csv
 
-def save_results_to_csv(results, filename="Benchmark_inverse_kinematic_results.csv"):
+def save_results_to_csv(results, filename="data/Benchmark_inverse_kinematic_results.csv"):
     """
     Saves the benchmark summary (median, 5th & 95th-percentile times) to a CSV file.
     """
@@ -302,7 +302,7 @@ def save_results_to_csv(results, filename="Benchmark_inverse_kinematic_results.c
             ])
 
 if __name__ == "__main__":
-    max_dof = 2**12
+    max_dof = 2**10
     runs_per_dof = 100
     
     benchmark_results = benchmark_parallel(max_dof, runs_per_dof)

@@ -302,7 +302,7 @@ def getJacobianCenter(q = None, SI = False):
     Jac_arr = []
     for i in range(1, len(T_arr)):
         Jac = []
-        On = (T_arr[i] @ np.array([ *robot.CenterOfMass[i] , 1 ]))[:3]
+        On = (T_arr[i] @ np.array([ *np.array(robot.CenterOfMass[i]) , 1 ]))[:3]
 
         for j in range(1, len(T_arr)):
             if j <= i:

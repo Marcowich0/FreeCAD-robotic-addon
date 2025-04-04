@@ -462,7 +462,7 @@ def solvePath():
     displayMatrix(sel.t)
 
 
-
+import compute_torque
 
 def updateTorques():
     robot = get_robot()
@@ -574,7 +574,7 @@ def plotTrajectoryData():
     plt.tight_layout()
     plt.show()
 
-import compute_torque
+
 
 import os
 import csv

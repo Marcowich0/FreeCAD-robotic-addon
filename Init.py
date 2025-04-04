@@ -40,3 +40,7 @@ module_path = os.path.join(current_dir, "robot_dynamics_module", "build", "Relea
 
 # Add the module path to sys.path
 sys.path.append(module_path)
+
+
+extra_path = os.path.join(current_dir, "vendor")
+sys.path.append(extra_path)

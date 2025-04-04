@@ -44,12 +44,16 @@ def getJacobian(q, dh):
 
 def solve_ik_old(q, target_pos, target_dir, dh):
     max_iterations = 300
-    tolerance = 0.1
+    tolerance = 1e-6
     damping = 0.1
     orientation_weight = 1.0
+    alpha = 0.01  # null-space weight for smoothness
 
     # If target_dir is a valid direction vector
     target_active = abs(np.linalg.norm(target_dir) - 1) < 1e-4
+
+    # Store the initial configuration for null-space projection
+    q_init = q.copy()
     
     for _ in range(max_iterations):
         T_arr = getDHTransformations(q, dh)
@@ -70,7 +74,6 @@ def solve_ik_old(q, target_pos, target_dir, dh):
 
         # Jacobian
         J_full = getJacobian(q, dh)
-        # position-only or position+orientation
         J = J_full if target_active else J_full[:3, :]
 
         # Damped least squares
@@ -80,11 +83,52 @@ def solve_ik_old(q, target_pos, target_dir, dh):
         damping_matrix = (damping**2) * np.eye(m)
         J_pseudo = J_T @ np.linalg.inv(JJT + damping_matrix)
 
-        # Update q
-        delta_theta = J_pseudo @ delta_x
+        # Null-space projection
+        I = np.eye(len(q))
+        N = I - J_pseudo @ J
+
+        # Smoothness optimization: pull configuration toward initial configuration
+        z = q_init - q
+
+        # Full update with null-space term
+        delta_theta = J_pseudo @ delta_x + alpha * (N @ z)
         q = q + delta_theta.flatten()
 
     return False  # No solution within max_iterations
+
+def build_target_T(target_pos, target_dir):
+    """Construct a homogeneous transformation with translation = target_pos and
+    z-axis = target_dir (with arbitrary x and y axes)."""
+    z = target_dir / np.linalg.norm(target_dir)
+    # Choose an arbitrary vector that is not parallel to z.
+    if np.allclose(z, np.array([0, 0, 1])):
+        x_temp = np.array([1, 0, 0])
+    else:
+        x_temp = np.array([0, 0, 1])
+    x = np.cross(x_temp, z)
+    if np.linalg.norm(x) < 1e-6:
+        x = np.array([1, 0, 0])
+    else:
+        x = x / np.linalg.norm(x)
+    y = np.cross(z, x)
+    R = np.column_stack((x, y, z))
+    T = np.eye(4)
+    T[:3, :3] = R
+    T[:3, 3] = target_pos
+    return T
+
+def solve_ik_roboticstoolbox(q_initial, target_pos, target_dir, dh):
+    """Solve IK using Peter Corke's Robotics Toolbox."""
+    from roboticstoolbox import DHRobot, RevoluteDH
+    # Build a robot model from DH parameters.
+    robot = DHRobot([RevoluteDH(d=link[1], a=link[2], alpha=link[3]) for link in dh])
+    T_target = build_target_T(target_pos, target_dir)
+    # Use the Levenberg–Marquardt IK solver.
+    sol = robot.ikine_LM(T_target, q0=q_initial, tol=1e-6)
+    if sol.success:
+        return sol.q
+    else:
+        return False
 
 def generate_random_dh(n_dof):
     """Generate random DH parameters for each joint."""
@@ -114,8 +158,8 @@ def compute_random_target(dh_params):
 
 def run_single_iteration(dof):
     """
-    Runs IK once with both the new C++ solver and the old solver,
-    returning their times in seconds as (time_cpp, time_old).
+    Runs IK once with all three solvers, returning their times in seconds as
+    (time_cpp, time_old, time_rtb).
     """
     try:
         dh = generate_random_dh(dof)
@@ -132,13 +176,19 @@ def run_single_iteration(dof):
         solve_ik_old(q_initial, target_pos, target_dir, dh)
         time_old = time.perf_counter() - start
 
-        return (time_cpp, time_old)
-    except:
+        # Time the robotics toolbox solver
+        start = time.perf_counter()
+        solve_ik_roboticstoolbox(q_initial, target_pos, target_dir, dh)
+        time_rtb = time.perf_counter() - start
+
+        return (time_cpp, time_old, time_rtb)
+    except Exception as e:
+        print("Error in iteration:", e)
         return None
 
 def benchmark_parallel(max_dof=32, runs_per_dof=300):
     """
-    Benchmark both IK solvers in parallel, testing only exponential
+    Benchmark all three IK solvers in parallel, testing only exponential
     DOF values (powers of two) up to 'max_dof'.
     """
     # Generate DOF values: 2, 4, 8, ..., up to max_dof
@@ -148,7 +198,7 @@ def benchmark_parallel(max_dof=32, runs_per_dof=300):
         dof_values.append(1 << power)
         power += 1
     
-    # Dictionary: dof -> ( [cpp_times], [old_times] )
+    # Dictionary: dof -> ( [cpp_times], [old_times], [rtb_times] )
     results = {}
     
     with mp.Pool(processes=mp.cpu_count()) as pool:
@@ -157,6 +207,7 @@ def benchmark_parallel(max_dof=32, runs_per_dof=300):
             
             cpp_times = []
             old_times = []
+            rtb_times = []
             chunk_size = max(50, runs_per_dof // 100)
             
             for outcome in pool.imap_unordered(
@@ -165,12 +216,13 @@ def benchmark_parallel(max_dof=32, runs_per_dof=300):
                 chunksize=chunk_size
             ):
                 if outcome is not None:
-                    t_cpp, t_old = outcome
+                    t_cpp, t_old, t_rtb = outcome
                     cpp_times.append(t_cpp)
                     old_times.append(t_old)
+                    rtb_times.append(t_rtb)
             
             if cpp_times:
-                results[dof] = (cpp_times, old_times)
+                results[dof] = (cpp_times, old_times, rtb_times)
             else:
                 results[dof] = None
 
@@ -178,38 +230,36 @@ def benchmark_parallel(max_dof=32, runs_per_dof=300):
 
 def plot_performance_line(results):
     """
-    Creates a line plot of median times vs. DOF, with points connected,
-    and error bars marking the 5th and 95th percentiles for each solver.
-    Both x-axis and y-axis are in log scale (base-2 for x, base-10 for y).
+    Creates a line plot of median times vs. DOF for all three solvers, with points
+    connected, and error bars marking the 5th and 95th percentiles. Both axes are in log scale.
     """
     plt.figure(figsize=(14, 8))
     
     # Collect DOFs in sorted order
     sorted_dofs = sorted(d for d in results if results[d] is not None)
     
-    # Prepare arrays for each solver
     dofs = []
-    median_cpp = []
-    p5_cpp = []
-    p95_cpp = []
-    median_old = []
-    p5_old = []
-    p95_old = []
+    median_cpp, p5_cpp, p95_cpp = [], [], []
+    median_old, p5_old, p95_old = [], [], []
+    median_rtb, p5_rtb, p95_rtb = [], [], []
     
     for dof in sorted_dofs:
-        cpp_times, old_times = results[dof]
-        cpp_times_ms = np.array(cpp_times) * 1000  # Convert to ms
-        old_times_ms = np.array(old_times) * 1000
+        cpp_times, old_times, rtb_times = results[dof]
+        cpp_ms = np.array(cpp_times) * 1000  # ms
+        old_ms = np.array(old_times) * 1000
+        rtb_ms = np.array(rtb_times) * 1000
         
         dofs.append(dof)
-        median_cpp.append(np.median(cpp_times_ms))
-        p5_cpp.append(np.percentile(cpp_times_ms, 5))
-        p95_cpp.append(np.percentile(cpp_times_ms, 95))
-        median_old.append(np.median(old_times_ms))
-        p5_old.append(np.percentile(old_times_ms, 5))
-        p95_old.append(np.percentile(old_times_ms, 95))
+        median_cpp.append(np.median(cpp_ms))
+        p5_cpp.append(np.percentile(cpp_ms, 5))
+        p95_cpp.append(np.percentile(cpp_ms, 95))
+        median_old.append(np.median(old_ms))
+        p5_old.append(np.percentile(old_ms, 5))
+        p95_old.append(np.percentile(old_ms, 95))
+        median_rtb.append(np.median(rtb_ms))
+        p5_rtb.append(np.percentile(rtb_ms, 5))
+        p95_rtb.append(np.percentile(rtb_ms, 95))
     
-    # Convert to NumPy arrays
     dofs = np.array(dofs)
     median_cpp = np.array(median_cpp)
     p5_cpp = np.array(p5_cpp)
@@ -217,78 +267,59 @@ def plot_performance_line(results):
     median_old = np.array(median_old)
     p5_old = np.array(p5_old)
     p95_old = np.array(p95_old)
+    median_rtb = np.array(median_rtb)
+    p5_rtb = np.array(p5_rtb)
+    p95_rtb = np.array(p95_rtb)
     
-    # Calculate error ranges: lower (median - 5th) and upper (95th - median)
     cpp_lower_err = median_cpp - p5_cpp
     cpp_upper_err = p95_cpp - median_cpp
     old_lower_err = median_old - p5_old
     old_upper_err = p95_old - median_old
+    rtb_lower_err = median_rtb - p5_rtb
+    rtb_upper_err = p95_rtb - median_rtb
 
-    # Plot line + points + error bars for C++ solver
-    plt.errorbar(
-        dofs,
-        median_cpp,
-        yerr=[cpp_lower_err, cpp_upper_err],
-        fmt='-o',
-        capsize=4,
-        label='C++',
-        color='blue',
-        alpha=0.8
-    )
+    plt.errorbar(dofs, median_cpp, yerr=[cpp_lower_err, cpp_upper_err],
+                 fmt='-o', capsize=4, label='C++', color='blue', alpha=0.8)
+    plt.errorbar(dofs, median_old, yerr=[old_lower_err, old_upper_err],
+                 fmt='-s', capsize=4, label='Python', color='red', alpha=0.8)
+    plt.errorbar(dofs, median_rtb, yerr=[rtb_lower_err, rtb_upper_err],
+                 fmt='-^', capsize=4, label='Robotics Toolbox', color='green', alpha=0.8)
     
-    # Plot line + points + error bars for Old solver
-    plt.errorbar(
-        dofs,
-        median_old,
-        yerr=[old_lower_err, old_upper_err],
-        fmt='-s',
-        capsize=4,
-        label='Python',
-        color='red',
-        alpha=0.8
-    )
-    
-    # Apply log scale to both axes
-    plt.xscale('log', base=2)  # log base-2 for x
-    plt.yscale('log')          # log base-10 for y (default)
-
+    plt.xscale('log', base=2)
+    plt.yscale('log')
     ax = plt.gca()
     ax.yaxis.grid(True, which='major', linestyle='-')
     ax.yaxis.grid(True, which='minor', linestyle=':')
     ax.yaxis.set_minor_locator(AutoMinorLocator())
-
-    # Explicitly set x-ticks to the actual DOFs (2, 4, 8, ...)
     plt.xticks(dofs, [str(d) for d in dofs])
-    
-    # A little space on either side if you like
     plt.xlim(dofs[0] / 1.5, dofs[-1] * 1.5)
-    
     plt.xlabel('Degrees of Freedom [log2 Scale]', fontsize=12)
     plt.ylabel('Computation Time (ms) [Median with 5th-95th Percentile Range; log Scale]', fontsize=12)
-    plt.title('IK Solver Performance: C++ vs. Python Implementation', fontsize=14)
+    plt.title('IK Solver Performance: C++ vs. Python vs. Robotics Toolbox', fontsize=14)
     plt.legend()
     plt.tight_layout()
-    #plt.savefig('ik_solver_comparison_lineplot.png', dpi=300)
     plt.show()
 
 import csv
 
-def save_results_to_csv(results, filename="data/Benchmark_inverse_kinematic_results.csv"):
+def save_results_to_csv(results, filename="Benchmark/Benchmark_inverse_kinematic_results.csv"):
     """
-    Saves the benchmark summary (median, 5th & 95th-percentile times) to a CSV file.
+    Saves the benchmark summary (median, 5th & 95th-percentile times) for all three solvers to a CSV file.
     """
     sorted_dofs = sorted(d for d in results if results[d] is not None)
     
     with open(filename, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["DOF", "Samples", 
-                        "CPP_Median_ms", "CPP_5th_ms", "CPP_95th_ms",
-                        "PY_Median_ms", "PY_5th_ms", "PY_95th_ms"])
+                         "CPP_Median_ms", "CPP_5th_ms", "CPP_95th_ms",
+                         "PY_Median_ms", "PY_5th_ms", "PY_95th_ms",
+                         "RTB_Median_ms", "RTB_5th_ms", "RTB_95th_ms"])
         
         for dof in sorted_dofs:
-            cpp_times, py_times = results[dof]
+            cpp_times, py_times, rtb_times = results[dof]
             cpp_ms = np.array(cpp_times) * 1000
             py_ms = np.array(py_times) * 1000
+            rtb_ms = np.array(rtb_times) * 1000
             
             writer.writerow([
                 dof,
@@ -298,29 +329,51 @@ def save_results_to_csv(results, filename="data/Benchmark_inverse_kinematic_resu
                 np.percentile(cpp_ms, 95),
                 np.median(py_ms),
                 np.percentile(py_ms, 5),
-                np.percentile(py_ms, 95)
+                np.percentile(py_ms, 95),
+                np.median(rtb_ms),
+                np.percentile(rtb_ms, 5),
+                np.percentile(rtb_ms, 95)
             ])
 
 if __name__ == "__main__":
-    max_dof = 2**10
-    runs_per_dof = 100
+    # Ensure the Robotics Toolbox is available.
+    try:
+        from roboticstoolbox import DHRobot, RevoluteDH
+    except ImportError:
+        print("Please install 'roboticstoolbox-python' to benchmark the Robotics Toolbox IK solver.")
+        sys.exit(1)
+    
+    max_dof = 2**6
+    runs_per_dof = 300
     
     benchmark_results = benchmark_parallel(max_dof, runs_per_dof)
     
     print("\nBenchmark Summary:")
-    print(f"{'DOF':<5} | {'Samples':<8} "
-          f"| {'C++ Median (ms)':<15} | {'C++ 5th (ms)':<14} | {'C++ 95th (ms)':<14} "
-          f"| {'Old Median (ms)':<15} | {'Old 5th (ms)':<14} | {'Old 95th (ms)':<14}")
+    header = ("DOF", "Samples", 
+              "C++ Median (ms)", "C++ 5th (ms)", "C++ 95th (ms)",
+              "Python Median (ms)", "Python 5th (ms)", "Python 95th (ms)",
+              "RTB Median (ms)", "RTB 5th (ms)", "RTB 95th (ms)")
+    print(" | ".join(f"{h:<18}" for h in header))
     
     for dof in sorted(benchmark_results.keys()):
         if benchmark_results[dof] is not None:
-            cpp_times, old_times = benchmark_results[dof]
+            cpp_times, py_times, rtb_times = benchmark_results[dof]
             cpp_arr = np.array(cpp_times) * 1000
-            old_arr = np.array(old_times) * 1000
-            
-            print(f"{dof:<5} | {len(cpp_times):<8} "
-                  f"| {np.median(cpp_arr):<15.3f} | {np.percentile(cpp_arr, 5):<14.3f} | {np.percentile(cpp_arr, 95):<14.3f} "
-                  f"| {np.median(old_arr):<15.3f} | {np.percentile(old_arr, 5):<14.3f} | {np.percentile(old_arr, 95):<14.3f}")
+            py_arr = np.array(py_times) * 1000
+            rtb_arr = np.array(rtb_times) * 1000
+            print(" | ".join([
+                f"{dof:<18}",
+                f"{len(cpp_times):<18}",
+                f"{np.median(cpp_arr):<18.3f}",
+                f"{np.percentile(cpp_arr, 5):<18.3f}",
+                f"{np.percentile(cpp_arr, 95):<18.3f}",
+                f"{np.median(py_arr):<18.3f}",
+                f"{np.percentile(py_arr, 5):<18.3f}",
+                f"{np.percentile(py_arr, 95):<18.3f}",
+                f"{np.median(rtb_arr):<18.3f}",
+                f"{np.percentile(rtb_arr, 5):<18.3f}",
+                f"{np.percentile(rtb_arr, 95):<18.3f}"
+            ]))
     
     save_results_to_csv(benchmark_results)
     plot_performance_line(benchmark_results)

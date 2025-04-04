@@ -15,8 +15,9 @@ import TrejectoryObject
 import forward_kinematics
 import inverse_kinematics
 
-import dynamics
+import Validation
 
+import dynamics
 
 class Robotics (Workbench):
     MenuText = "Robotics"
@@ -35,7 +36,7 @@ class Robotics (Workbench):
         self.appendToolbar("Forward Kinematics", [ "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
         self.appendToolbar("Trajectory", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "SaveTrajectoryDataCommand"])
-
+        self.appendToolbar("Validation", ["printDynamics"])
 
         #self.appendMenu("My New Menu", self.list)
         #self.appendMenu(["An existing Menu", "My submenu"], self.list)

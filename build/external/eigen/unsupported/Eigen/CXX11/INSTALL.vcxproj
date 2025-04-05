@@ -196,7 +196,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="D:\FreeCAD\Mod\FreeCAD-robotic-addon\build\external\pybind11\ALL_BUILD.vcxproj">
+    <ProjectReference Include="D:\FreeCAD\Mod\FreeCAD-robotic-addon\build\ALL_BUILD.vcxproj">
       <Project>{D8A26201-47E4-301D-8E08-2D40598C05D4}</Project>
       <Name>ALL_BUILD</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

@@ -6,7 +6,6 @@ import numpy as np
 from main_utils import get_robot, displayMatrix
 import compute_torque
 
-from roboticstoolbox import DHRobot, RevoluteDH
 
 class printDynamics:
     """Command to draw the robot using Denavit-Hartenberg parameters."""
@@ -43,10 +42,7 @@ class printDynamics:
         displayMatrix(compute_torque.computeJointTorques(q, np.zeros_like(robot.Angles), np.ones_like(robot.Angles), M, InertiaMatrices, CenterOfMass, DHperameters))
 
 
-
-
     def IsActive(self):        
-
         return True
 
 FreeCADGui.addCommand('printDynamics', printDynamics())

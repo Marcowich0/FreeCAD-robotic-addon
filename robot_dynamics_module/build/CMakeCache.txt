@@ -363,6 +363,15 @@ pybind11_IS_TOP_LEVEL:STATIC=OFF
 //Value Computed by CMake
 pybind11_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11
 
+//Value Computed by CMake
+robotics_modules_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/build
+
+//Value Computed by CMake
+robotics_modules_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+robotics_modules_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
+
 
 ########################
 # INTERNAL cache entries

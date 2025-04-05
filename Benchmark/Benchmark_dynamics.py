@@ -340,5 +340,5 @@ if __name__ == "__main__":
                 f"{np.median(err_cpp_rtb):<20.3e}"
             ]))
     
-    save_results_to_csv(results, filename="data/Benchmark_dynamics_result.csv")
     plot_performance_line(results)
+    save_results_to_csv(results, filename="Benchmark/Benchmark_dynamics_result.csv")

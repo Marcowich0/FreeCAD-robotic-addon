@@ -3,7 +3,8 @@ import FreeCADGui
 from PySide import QtCore, QtGui
 import os
 import numpy as np
-from main_utils import get_robot  # Assumes this function exists and returns the robot object
+from Utils.main_utils import get_robot, vec_to_numpy  # Assumes this function exists and returns the robot object
+import inverse_kinematics_cpp
 
 from inverse_kinematics import solve_ik
 
@@ -14,7 +15,7 @@ class RobotEndEffectorDialog(QtGui.QDialog):
     Clicking a button will move the current EndEffectorGlobal position by the specified step (in mm)
     and call solve_ik(new_position).
     """
-    def __init__(self, robot_obj, step=1.0):
+    def __init__(self, robot_obj, step=100.0):
         super(RobotEndEffectorDialog, self).__init__()
         self.robot_obj = robot_obj
         self.step = step  # Default step in mm
@@ -89,11 +90,24 @@ class RobotEndEffectorDialog(QtGui.QDialog):
         Adjust the end effector position by the given deltas and call solve_ik().
         """
         # Get the current position of the end effector.
-        current_pos = self.robot_obj.DHTransformations[-1][:3, 3]
-        new_pos = current_pos + np.array([dx, dy, dz])
+        robot = get_robot()
+
+        # Prepare DH parameters
+        DHraw = np.array(robot.DHPerameters, dtype=object)
+        DHraw[:, 0] = 0.0
+        DH = DHraw.astype(float)
+        DH[:, 1:3] /= 1000
+        target_dir = vec_to_numpy(robot.EndEffectorOrientation)
+
+        q = np.deg2rad(robot.Angles)
+
+        current_pos = inverse_kinematics_cpp.getDHTransformations(q,DH)[-1][:3, 3]
+        new_pos = current_pos + np.array([dx, dy, dz])/1000
         
         # Call the inverse kinematics solver to move the robot.
-        solve_ik(new_pos)
+        converged, q = inverse_kinematics_cpp.solveIK(q, new_pos, target_dir, DH)
+
+        robot.Angles = np.rad2deg(q).tolist()
         
         # Optionally, recompute the document if needed.
         FreeCAD.ActiveDocument.recompute()

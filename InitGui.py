@@ -13,12 +13,12 @@ import RobotObject
 import Trajectory_parent
 import Trajectory_constant_velocity
 import Trajectory_commands
+import Trajectory_time_optimized
 
 import forward_kinematics
 import inverse_kinematics
 
 import Validation
-import TimeOptimizedTrajectory
 
 import dynamics
 

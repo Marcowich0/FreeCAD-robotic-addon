@@ -25,7 +25,7 @@ class computeTimeOptimizedTrajectory:
 
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'rotateBody.svg'),
+            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'rotateBody.svg'),
             'MenuText': 'Rotate Joint',
             'ToolTip': 'Rotate the zero-state of a joint 90 degrees'
         }

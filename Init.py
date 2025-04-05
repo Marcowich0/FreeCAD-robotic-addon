@@ -42,5 +42,11 @@ module_path = os.path.join(current_dir, "robot_dynamics_module", "build", "Relea
 sys.path.append(module_path)
 
 
-extra_path = os.path.join(current_dir, "vendor")
-sys.path.append(extra_path)
+trajectory_path = os.path.join(current_dir, "Trajectory")
+sys.path.append(trajectory_path)
+
+utils_path = os.path.join(current_dir, "Utils")
+sys.path.append(utils_path)
+
+gui_elements_path = os.path.join(current_dir, "GUI_elements")
+sys.path.append(gui_elements_path)

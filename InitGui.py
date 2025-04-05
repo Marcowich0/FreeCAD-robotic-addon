@@ -10,7 +10,9 @@ import qt_orientation_sliders
 import qt_move_end_effector
 
 import RobotObject     
-import TrejectoryObject
+import Trajectory_parent
+import Trajectory_constant_velocity
+import Trajectory_commands
 
 import forward_kinematics
 import inverse_kinematics
@@ -36,7 +38,7 @@ class Robotics (Workbench):
         self.appendToolbar("Initial position", ["rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", [ "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
-        self.appendToolbar("Trajectory", ["AddTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "SaveTrajectoryDataCommand"])
+        self.appendToolbar("Trajectory", ["AddConstantVelTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "SaveTrajectoryDataCommand"])
         self.appendToolbar("Validation", ["printDynamics"])
         self.appendToolbar("Test", ["computeTimeOptimizedTrajectory"])
 

@@ -373,45 +373,4 @@ def rotateBodyZero():
 
 ##################################################################################################################
 
-class changeRotationDirectionCommand:
-    """Command to draw the robot using Denavit-Hartenberg parameters."""
-
-    def __init__(self):
-        pass
-
-    def GetResources(self):
-        return {
-            'Pixmap': os.path.join(os.path.dirname(__file__), 'Resources', 'icons', 'changeDirection.svg'),
-            'MenuText': 'Change Rotation Direction',
-            'ToolTip': 'Change the positive rotation direction of the selected joint'
-        }
-
-    def Activated(self):
-        changeRotationDirection()
-
-    def IsActive(self):        
-        sel = FreeCADGui.Selection.getSelection()
-
-        if not sel or get_robot() == None:
-            return False
-    
-        for s in sel:
-            if s not in get_robot().Bodies:
-                return False
-
-        return True
-
-FreeCADGui.addCommand('changeRotationDirectionCommand', changeRotationDirectionCommand())
-
-def changeRotationDirection():
-    robot = get_robot()
-    selections = FreeCADGui.Selection.getSelection()
-
-    for sel in selections:
-        body = sel
-        idx = robot.Bodies.index(body)
-        print(f"Flipping DH Coordinate system {body.Name}, idx: {idx}")
-        robot.CoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 180) # Swap direction of the z-axis
-        robot.BodyJointCoordinateSystems[idx].Placement.Rotation *= FreeCAD.Rotation(FreeCAD.Vector(1,0,0), 180)
-
 

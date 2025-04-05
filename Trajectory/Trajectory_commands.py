@@ -4,6 +4,12 @@ import FreeCADGui
 from PySide import QtCore
 from main_utils import currentSelectionType, get_robot, displayMatrix, vec_to_numpy, mat_to_numpy
 import os
+import numpy as np
+
+# Utility variables for animation
+animation_state = "stopped"  # Possible states: "playing", "paused", "stopped"
+current_animation_index = 0
+animation_timer = None
 
 class PlayTrajectoryCommand:
     def GetResources(self):
@@ -19,7 +25,7 @@ class PlayTrajectoryCommand:
             return
 
         sel = FreeCADGui.Selection.getSelection()[0]
-        if not sel.Angles:
+        if not sel.q:
             print("No angles calculated!")
             return
 
@@ -29,7 +35,7 @@ class PlayTrajectoryCommand:
 
         if animation_state == "stopped":
             current_animation_index = 0
-            self.update_robot_position(sel.Angles[0])
+            self.update_robot_position(sel.q[0])
 
         animation_state = "playing"
         delay = int((sel.DistanceBetweenPoints / sel.Velocity) * 1000)
@@ -38,17 +44,17 @@ class PlayTrajectoryCommand:
     def update_animation(self):
         global animation_state, current_animation_index
         sel = FreeCADGui.Selection.getSelection()[0]
-        if not sel or current_animation_index >= len(sel.Angles):
+        if not sel or current_animation_index >= len(sel.q):
             self.stop_animation()
             return
 
-        self.update_robot_position(sel.Angles[current_animation_index])
+        self.update_robot_position(sel.q[current_animation_index])
         current_animation_index += 1
 
-    def update_robot_position(self, angles):
+    def update_robot_position(self, q):
         robot = get_robot()
         if robot:
-            robot.Angles = angles
+            robot.Angles = np.rad2deg(q).tolist()
             FreeCADGui.updateGui()
 
     def stop_animation(self):
@@ -60,7 +66,7 @@ class PlayTrajectoryCommand:
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()[0] if FreeCADGui.Selection.getSelection() else None
         return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory'
-                    and animation_state != "playing" and sel.Angles)
+                    and animation_state != "playing" and sel.q)
 
 
 FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())
@@ -102,8 +108,8 @@ class StopTrajectoryCommand:
         current_animation_index = 0
 
         sel = FreeCADGui.Selection.getSelection()[0]
-        if sel.Angles:
-            get_robot().Angles = sel.Angles[0]
+        if sel.q:
+            get_robot().Angles = np.rad2deg(sel.q[0]).tolist()
             FreeCADGui.updateGui()
 
         if animation_timer:

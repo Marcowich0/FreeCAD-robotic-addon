@@ -28,12 +28,6 @@ import compute_torque
 from Trajectory_parent import Trajectory, ViewProviderTrajectory
 
 
-# Utility variables for animation
-animation_state = "stopped"  # Possible states: "playing", "paused", "stopped"
-current_animation_index = 0
-animation_timer = None
-
-
 class ConstantVelocityTrajectory(Trajectory):
     """
     Child class of Trajectory that contains all the existing logic
@@ -41,10 +35,104 @@ class ConstantVelocityTrajectory(Trajectory):
     """
     def __init__(self, obj):
         super().__init__(obj)
-        # We could modify obj.Type if desired, but let's keep it "Trajectory" or rename to something else.
-        # obj.Type = "ConstantVelocityTrajectory"
-        # Or do nothing, your choice.
+        # Add properties specific to this trajectory type
 
+        obj.addProperty("App::PropertyString", "SubType", "Trajectory", "Type of the object").SubType = "ConstantVelocity"
+
+        obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body")
+        obj.addProperty("App::PropertyLinkSubList", "Edges", "Trajectory", "Link to Edges").Edges = []
+        obj.addProperty("App::PropertyVectorList", "SplinePoints", "Trajectory", "List of spline points").SplinePoints = []
+
+        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 1
+
+        # Spline/tuning parameters
+        obj.addProperty("App::PropertyFloat", "smoothing", "Trajectory", "Smoothing factor").smoothing = 1
+        obj.addProperty("App::PropertyFloat", "alpha", "Trajectory", "Pre-path extension").alpha = 0.1
+
+        obj.addProperty("App::PropertyBool", "externalModel", "Trajectory", "External Model").externalModel = False
+        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 5e-3
+
+    
+    def solve(self):
+        """
+        Solve the trajectory at (nominally) constant velocity using the same
+        logic originally in solvePath(), but referencing self.Object 
+        instead of the local variable `sel`.
+        """
+        from FreeCADGui import Selection
+        from scipy.interpolate import splprep, splev  # example import if needed
+
+        obj = self.Object
+        robot = get_robot()
+
+        # Prepare DH parameters
+        DHraw = np.array(robot.DHPerameters, dtype=object)
+        DHraw[:, 0] = 0.0
+        DH = DHraw.astype(float)
+        DH[:, 1:3] /= 1000  # convert mm to m
+        target_dir = vec_to_numpy(robot.EndEffectorOrientation)
+
+        # 1) Get raw 3D points (in meters) from object
+        raw_pts = [vec_to_numpy(p)/1000.0 for p in computeTrajectoryPoints(obj)]
+        if len(raw_pts) < 2:
+            print("Not enough points!")
+            return
+        pts_np = np.array(raw_pts).T  # shape (3, N)
+
+        # 2) Fit a parametric spline
+        tck, u = splprep(pts_np, s=(obj.smoothing * 1e-6))
+        num_sample = len(raw_pts) * 4
+        u_new = np.linspace(-obj.alpha, 1, num_sample)
+        smooth_pts = np.array(splev(u_new, tck, ext=3)).T  # shape (M, 3)
+
+        # Store spline points on the FreeCAD object
+        from FreeCAD import Vector
+        obj.SplinePoints = [Vector(*pt) for pt in smooth_pts]
+
+        # 3) Arc-length to time
+        arc = np.zeros(len(smooth_pts))
+        for i in range(1, len(smooth_pts)):
+            arc[i] = arc[i-1] + np.linalg.norm(smooth_pts[i] - smooth_pts[i-1])
+        t_array = arc / obj.Velocity
+
+        # 4) Derivatives (Cartesian space)
+        x_dot = np.gradient(smooth_pts, t_array, axis=0)
+
+        # 5) Inverse Kinematics
+        q_list = []
+        q = np.deg2rad(robot.Angles)  # initial guess
+        for i, p in enumerate(smooth_pts):
+            if i == 0:
+                # Possibly your custom solve_ik or initial solve
+                q = solve_ik(q, p, target_dir, DH)
+            else:
+                converged, q = inverse_kinematics_cpp.solveIK(q, p, target_dir, DH)
+            q_list.append(q)
+
+        # 6) Joint velocities with Jacobian
+        q_dot_list = []
+        for i, q_now in enumerate(q_list):
+            J = getJacobian(q_now)
+            if J.ndim > 2:
+                J = J[0]
+            J_pos = J[0:3, :]
+            q_dot_list.append(np.linalg.pinv(J_pos).dot(x_dot[i]))
+        q_dot_arr = np.array(q_dot_list)
+        q_ddot_arr = np.gradient(q_dot_arr, t_array, axis=0)
+
+        # 7) Store results in the object
+        obj.q      = q_list
+        obj.t      = t_array
+        obj.q_dot  = q_dot_arr
+        obj.q_ddot = q_ddot_arr
+
+        # Robot's final angles (degrees)
+        robot.Angles = np.rad2deg(q_list[-1]).tolist()
+
+        print("Trajectory solved with parametric smoothing and pre-path extension.")
+        displayMatrix(obj.t)  # if you still want this for debugging/logging
+
+        self.updateTorques()
 
 #
 # --------------------- HELPER FUNCTIONS ---------------------
@@ -198,7 +286,7 @@ def solvePath():
 
     # 5) Inverse Kinematics
     q_list = []
-    angles_deg = []
+    #angles_deg = []
     q = np.deg2rad(robot.Angles)
     for i, p in enumerate(smooth_pts):
         if i == 0:
@@ -206,7 +294,7 @@ def solvePath():
         else:
             converged, q = inverse_kinematics_cpp.solveIK(q, p, target_dir, DH)
         q_list.append(q)
-        angles_deg.append(np.rad2deg(q).tolist())
+        #angles_deg.append(np.rad2deg(q).tolist())
 
     # 6) Joint velocities with Jacobian
     q_dot_list = []
@@ -221,11 +309,11 @@ def solvePath():
     q_ddot_arr = np.gradient(q_dot_arr, t_array, axis=0)
 
     # 7) Store
-    sel.Angles = angles_deg
+    sel.q = q_list
     sel.t = t_array
     sel.q_dot = q_dot_arr
     sel.q_ddot = q_ddot_arr
-    robot.Angles = angles_deg[-1]
+    robot.Angles = np.rad2deg(q_list[-1]).tolist()
 
     print("Trajectory solved with parametric smoothing and pre-path extension.")
     displayMatrix(sel.t)
@@ -242,7 +330,7 @@ def updateTorques():
     DHperameters[:,1:3] /= 1000
 
     sel = FreeCADGui.Selection.getSelection()[0]
-    q = np.deg2rad(sel.Angles)
+    q = sel.q
     q_dot = sel.q_dot
     q_ddot = sel.q_ddot
 
@@ -250,87 +338,6 @@ def updateTorques():
              qq, qd, qdd, M, InertiaMatrices, CenterOfMass, DHperameters
            ) for qq, qd, qdd in zip(q, q_dot, q_ddot)]
     sel.Torques = tau
-
-
-def plotTrajectoryData():
-    import numpy as np
-    from FreeCADGui import Selection
-
-    plt.style.use('dark_background')
-    dark_gray = '#303030'
-    plt.rcParams['axes.facecolor'] = dark_gray
-    plt.rcParams['figure.facecolor'] = dark_gray
-
-    def insert_nan_breaks(x, y, threshold=np.pi):
-        new_x = [x[0]]
-        new_y = [y[0]]
-        for i in range(1, len(x)):
-            if np.abs(y[i] - y[i-1]) > threshold:
-                new_x.append(np.nan)
-                new_y.append(np.nan)
-            new_x.append(x[i])
-            new_y.append(y[i])
-        return np.array(new_x), np.array(new_y)
-
-    sel = Selection.getSelection()[0]
-    t = np.array(sel.t)
-    angles = np.deg2rad(sel.Angles)
-    q_dot = np.array(sel.q_dot)
-    q_ddot = np.array(sel.q_ddot)
-    torques = np.array(sel.Torques)
-
-    if angles.ndim == 1:
-        angles = angles.reshape(-1, 1)
-        q_dot = q_dot.reshape(-1, 1)
-        q_ddot = q_ddot.reshape(-1, 1)
-    n_joints = angles.shape[1]
-
-    fig, axs = plt.subplots(4, 1, sharex=True, figsize=(8, 10))
-
-    # Positions
-    for j in range(n_joints):
-        wrapped = (angles[:, j] + np.pi) % (2*np.pi) - np.pi
-        new_t, new_wrapped = insert_nan_breaks(t, wrapped, np.pi)
-        axs[0].plot(new_t, new_wrapped, label=f'Joint {j+1}')
-    axs[0].set_ylabel('Position (rad)')
-    axs[0].set_title('Joint Positions')
-    axs[0].grid(True, color='gray')
-    axs[0].set_ylim(-np.pi, np.pi)
-    ticks = [-np.pi, -np.pi/2, 0, np.pi/2, np.pi]
-    labels = [r'$-\pi$', r'$-\pi/2$', '0', r'$\pi/2$', r'$\pi$']
-    axs[0].set_yticks(ticks)
-    axs[0].set_yticklabels(labels)
-    axs[0].legend(loc='upper right')
-
-    # Velocities
-    for j in range(n_joints):
-        axs[1].plot(t, q_dot[:, j], label=f'Joint {j+1}')
-    axs[1].set_ylabel('Velocity (rad/s)')
-    axs[1].set_title('Joint Velocities')
-    axs[1].grid(True, color='gray')
-    axs[1].legend(loc='upper right')
-
-    # Accelerations
-    for j in range(n_joints):
-        axs[2].plot(t, q_ddot[:, j], label=f'Joint {j+1}')
-    axs[2].set_ylabel('Acceleration (rad/s²)')
-    axs[2].set_title('Joint Accelerations')
-    axs[2].grid(True, color='gray')
-    axs[2].legend(loc='upper right')
-
-    # Torques
-    if torques.ndim == 1:
-        torques = torques.reshape(-1, 1)
-    for j in range(torques.shape[1]):
-        axs[3].plot(t, torques[:, j], label=f'Joint {j+1}')
-    axs[3].set_ylabel('Torque (Nm)')
-    axs[3].set_xlabel('Time (s)')
-    axs[3].set_title('Joint Torques')
-    axs[3].grid(True, color='gray')
-    axs[3].legend(loc='upper right')
-
-    plt.tight_layout()
-    plt.show()
 
 
 #
@@ -379,14 +386,19 @@ class SolveTrajectoryCommand:
         profiler = cProfile.Profile()
         profiler.enable()
 
-        solvePath()
-        updateTorques()
-        plotTrajectoryData()
+        sel = FreeCADGui.Selection.getSelection()
+        if sel:
+            trajectory_obj = sel[0]
+            # Simply call the child's solve() method via the proxy:
+            trajectory_obj.Proxy.solve()
+            # Optionally call plotTrajectoryData():
+            trajectory_obj.Proxy.plotTrajectoryData()
 
         profiler.disable()
         stats = pstats.Stats(profiler)
         stats.strip_dirs().sort_stats(pstats.SortKey.CUMULATIVE)
         sorted_stats = sorted(stats.stats.items(), key=lambda item: item[1][3], reverse=True)
+
         print("\nProfiling Results (Functions > 0.5 sec):")
         header_format = "{:<60s} {:>10s}"
         print(header_format.format("Function", "Time (sec)"))
@@ -400,8 +412,12 @@ class SolveTrajectoryCommand:
         print("\nProfiling completed.")
 
     def IsActive(self):
-        sel = FreeCADGui.Selection.getSelection()[0]
-        return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory')
+        sel = FreeCADGui.Selection.getSelection()
+        if not sel:
+            return False
+        obj = sel[0]
+        # Activate if the selected object has a `Type` property == 'Trajectory'
+        return bool(obj and hasattr(obj, 'Type') and obj.Type == 'Trajectory')
 
 
 FreeCADGui.addCommand('SolveTrajectoryCommand', SolveTrajectoryCommand())
@@ -433,7 +449,7 @@ class SaveTrajectoryDataCommand:
 
         try:
             t = list(traj_obj.t)
-            angles = list(traj_obj.Angles)
+            angles = list(traj_obj.q)
             q_dot = list(traj_obj.q_dot)
             q_ddot = list(traj_obj.q_ddot)
             torques = list(traj_obj.Torques)

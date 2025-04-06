@@ -1,0 +1,5 @@
+[console_scripts]
+eigdemo = roboticstoolbox.examples.eigdemo:main
+rtbtool = roboticstoolbox.bin.rtbtool:main
+tripleangledemo = roboticstoolbox.examples.tripleangledemo:main
+twistdemo = roboticstoolbox.examples.twistdemo:main

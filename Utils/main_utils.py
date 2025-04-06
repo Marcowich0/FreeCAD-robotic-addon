@@ -76,19 +76,6 @@ def currentSelectionType():
     
 
 def displayMatrix(matrix):
-    """
-    Prints a numeric matrix with aligned columns, rounding to 3 decimals
-    and replacing near-zero values with 0.
-
-    Accepts:
-    - list/tuple of numbers (1D or 2D)
-    - np.ndarray (1D or 2D)
-    - jax.numpy array (1D or 2D), if jax is installed
-
-    Example:
-        displayMatrix([1.234567, 0.0000000001, 3.14159])
-        displayMatrix([[1.234567, 2.71828], [3.14159, 0.00000001]])
-    """
 
     print("---------------------------------")
 
@@ -128,4 +115,18 @@ def displayMatrix(matrix):
     print("---------------------------------")
 
 
+def getNumericalDH():
+    """
+    Returns the Denavit-Hartenberg parameters for the robot.
+    """
+    robot = get_robot()
+    if robot:
+        DHraw = np.array(robot.DHPerameters, dtype=object)
+        DHraw[:, 0] = 0.0
+        DH = DHraw.astype(float)
+        DH[:, 1:3] /= 1000  # convert mm to m
+        return DH
+    else:
+        FreeCAD.Console.PrintError("No robot found.\n")
+        return None
 

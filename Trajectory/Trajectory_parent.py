@@ -1,7 +1,9 @@
 import FreeCAD
+import FreeCADGui
+import Part
 import numpy as np
 import matplotlib.pyplot as plt
-from Utils.main_utils import get_robot
+from Utils.main_utils import *
 import compute_torque
 
 
@@ -46,10 +48,7 @@ class Trajectory:
         CenterOfMass = np.array([np.array(m) for m in robot.CenterOfMass[1:]])
 
         # Prepare DH parameters
-        DHperameters = np.array(robot.DHPerameters)
-        DHperameters[:, 0] = 0
-        DHperameters = DHperameters.astype(float)
-        DHperameters[:, 1:3] /= 1000
+        DHperameters = getNumericalDH()
 
         # Fetch from self.Object
         q      = self.Object.q
@@ -188,3 +187,122 @@ class ViewProviderTrajectory:
 
     def __setstate__(self, state):
         return None
+
+
+
+
+
+#
+# --------------------- HELPER FUNCTIONS ---------------------
+#
+def selectEdgesForTrajectory(trajectory_obj):
+    collected_edges = []
+    for sel in FreeCADGui.Selection.getSelectionEx():
+        for subel_name in sel.SubElementNames:
+            collected_edges.append((sel.Object, subel_name))
+
+    trajectory_obj.Edges = collected_edges
+
+    # Attempt to set 'Body' by searching parents
+    if collected_edges:
+        obj = collected_edges[0][0]
+        for parent in obj.Parents:
+            if parent[0].Name == 'Assembly':
+                body_name = parent[1].split('.')[0]
+                print(f"Found parent body: {body_name}")
+                trajectory_obj.Body = FreeCAD.ActiveDocument.getObject(body_name)
+                break
+
+    print(f"Collected {len(collected_edges)} sub-elements in total.")
+
+
+
+
+
+def computeTrajectoryPoints(trajectory_obj):
+    # We assume there's at least one selected Trajectory in the GUI
+    sel = FreeCADGui.Selection.getSelection()[0]
+    if not trajectory_obj.Edges:
+        print("Error: No edge stored in the trajectory object!")
+        return []
+
+    point_list = []
+    for (obj, sub_elems) in trajectory_obj.Edges:
+        # sub_elems might be a single name or a list
+        names = sub_elems if isinstance(sub_elems, (list, tuple)) else [sub_elems]
+        for sub in names:
+            print("edge array", obj, sub)
+            edge_candidate = obj.getSubObject(sub)
+
+            if isinstance(edge_candidate, tuple):
+                edge = edge_candidate[0]
+            else:
+                edge = edge_candidate
+
+            body = trajectory_obj.Body
+            o_A_ol = mat_to_numpy(body.Placement.Matrix)
+            print("Matrix used for transformation")
+            displayMatrix(o_A_ol)
+
+            # Determine number of points
+            n_points = round(edge.Length * 1e-3 / trajectory_obj.DistanceBetweenPoints)
+            if n_points < 2:
+                n_points = 2
+
+            if isinstance(edge.Curve, (Part.Line, Part.LineSegment)):
+                start = edge.Vertexes[0].Point
+                end = edge.Vertexes[-1].Point
+                points_local = [start + (end - start)*(i/(n_points-1)) for i in range(n_points)]
+            else:
+                points_local = edge.discretize(Number=n_points)
+
+            if sel.externalModel:
+                # If externalModel, no transform?
+                points_global = [(np.append(vec_to_numpy(pt), 1))[:3] for pt in points_local]
+            else:
+                # Apply body placement transform
+                points_global = [(o_A_ol @ np.append(vec_to_numpy(pt), 1))[:3] for pt in points_local]
+
+            print(f"Points on edge: {len(points_global)}")
+            point_list.append(points_global)
+
+    # Merge all lists of points
+    merged_pts = chain_lists(point_list)
+    trajectory_obj.Points = merged_pts
+    return merged_pts
+
+
+
+
+def chain_lists(list_of_lists):
+    arrs = list_of_lists
+    chain = arrs.pop(0)  # take the first
+    while arrs:
+        best_dist = float('inf')
+        best_idx = -1
+        best_flip = False
+        best_prepend = False
+        for i, seg in enumerate(arrs):
+            cs, ce = chain[0], chain[-1]  # current chain start/end
+            ss, se = seg[0], seg[-1]      # segment start/end
+            # check 4 combos
+            d1 = np.linalg.norm(ce - ss)  # append normal
+            if d1 < best_dist:
+                best_dist, best_idx, best_flip, best_prepend = d1, i, False, False
+            d2 = np.linalg.norm(ce - se)  # append reversed
+            if d2 < best_dist:
+                best_dist, best_idx, best_flip, best_prepend = d2, i, True, False
+            d3 = np.linalg.norm(cs - ss)  # prepend reversed
+            if d3 < best_dist:
+                best_dist, best_idx, best_flip, best_prepend = d3, i, True, True
+            d4 = np.linalg.norm(cs - se)  # prepend normal
+            if d4 < best_dist:
+                best_dist, best_idx, best_flip, best_prepend = d4, i, False, True
+        chosen = arrs.pop(best_idx)
+        if best_flip:
+            chosen.reverse()
+        if best_prepend:
+            chain = chosen[:-1] + chain
+        else:
+            chain = chain + chosen[1:]
+    return [FreeCAD.Vector(*p) for p in chain]

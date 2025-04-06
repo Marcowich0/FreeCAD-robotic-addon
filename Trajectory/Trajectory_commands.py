@@ -5,6 +5,63 @@ from PySide import QtCore
 from main_utils import currentSelectionType, get_robot, displayMatrix, vec_to_numpy, mat_to_numpy
 import os
 import numpy as np
+import cProfile
+import pstats
+
+
+
+
+class SolveTrajectoryCommand:
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'solve.svg'),
+            'MenuText': 'Solve Trajectory',
+            'ToolTip': 'Solve inverse kinematics for chosen trajectory'
+        }
+
+    def Activated(self):
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        sel = FreeCADGui.Selection.getSelection()
+        if sel:
+            trajectory_obj = sel[0]
+            # Simply call the child's solve() method via the proxy:
+            trajectory_obj.Proxy.solve()
+            # Optionally call plotTrajectoryData():
+            trajectory_obj.Proxy.plotTrajectoryData()
+
+        profiler.disable()
+        stats = pstats.Stats(profiler)
+        stats.strip_dirs().sort_stats(pstats.SortKey.CUMULATIVE)
+        sorted_stats = sorted(stats.stats.items(), key=lambda item: item[1][3], reverse=True)
+
+        print("\nProfiling Results (Functions > 0.5 sec):")
+        header_format = "{:<60s} {:>10s}"
+        print(header_format.format("Function", "Time (sec)"))
+        print("-" * 72)
+        for func, stat in sorted_stats:
+            cumulative_time = stat[3]
+            if cumulative_time > 0.5:
+                func_str = f"{func[2]} ({func[0]}:{func[1]})"
+                print(header_format.format(func_str, f"{cumulative_time:.2f}"))
+
+        print("\nProfiling completed.")
+
+    def IsActive(self):
+        sel = FreeCADGui.Selection.getSelection()
+        if not sel:
+            return False
+        obj = sel[0]
+        # Activate if the selected object has a `Type` property == 'Trajectory'
+        return bool(obj and hasattr(obj, 'Type') and obj.Type == 'Trajectory')
+
+
+FreeCADGui.addCommand('SolveTrajectoryCommand', SolveTrajectoryCommand())
+
+
+
+
 
 # Utility variables for animation
 animation_state = "stopped"  # Possible states: "playing", "paused", "stopped"

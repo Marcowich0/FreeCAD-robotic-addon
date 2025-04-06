@@ -34,10 +34,10 @@ class ConstantVelocityTrajectory(Trajectory):
         obj.addProperty("App::PropertyLinkSubList", "Edges", "Trajectory", "Link to Edges").Edges = []
         obj.addProperty("App::PropertyVectorList", "SplinePoints", "Trajectory", "List of spline points").SplinePoints = []
 
-        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 1
+        obj.addProperty("App::PropertyFloat", "Velocity", "Trajectory", "Velocity").Velocity = 0.1
 
         # Spline/tuning parameters
-        obj.addProperty("App::PropertyFloat", "smoothing", "Trajectory", "Smoothing factor").smoothing = 1
+        obj.addProperty("App::PropertyFloat", "smoothing", "Trajectory", "Smoothing factor").smoothing = 100
         obj.addProperty("App::PropertyFloat", "alpha", "Trajectory", "Pre-path extension").alpha = 0.1
 
         obj.addProperty("App::PropertyBool", "externalModel", "Trajectory", "External Model").externalModel = False
@@ -100,10 +100,10 @@ class ConstantVelocityTrajectory(Trajectory):
         q_ddot_arr = np.gradient(q_dot_arr, t_array, axis=0)
 
         # 6) Store results in the object
-        obj.q      = q_list
-        obj.t      = t_array
-        obj.q_dot  = q_dot_arr
-        obj.q_ddot = q_ddot_arr
+        obj.t      = np.array(t_array).tolist()
+        obj.q      = np.array(q_list).tolist()
+        obj.q_dot  = np.array(q_dot_arr).tolist()
+        obj.q_ddot = np.array(q_ddot_arr).tolist()
 
         # Robot's final angles (degrees)
         robot.Angles = np.rad2deg(q_list[-1]).tolist()

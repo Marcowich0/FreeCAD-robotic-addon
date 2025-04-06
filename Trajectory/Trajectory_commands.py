@@ -82,7 +82,7 @@ class PlayTrajectoryCommand:
             return
 
         sel = FreeCADGui.Selection.getSelection()[0]
-        if sel.q is None:
+        if not sel.q:
             print("No angles calculated!")
             return
 
@@ -95,18 +95,30 @@ class PlayTrajectoryCommand:
             self.update_robot_position(sel.q[0])
 
         animation_state = "playing"
-        delay = int((sel.t[current_animation_index + 1] - sel.t[current_animation_index]) * 1000)
+        # Calculate delay based on the first interval
+        if len(sel.t) > current_animation_index + 1:
+            delay = int((sel.t[current_animation_index + 1] - sel.t[current_animation_index]) * 1000)
+        else:
+            delay = 100  # fallback delay if data is insufficient
         animation_timer.start(delay)
 
     def update_animation(self):
-        global animation_state, current_animation_index
+        global animation_state, current_animation_index, animation_timer
         sel = FreeCADGui.Selection.getSelection()[0]
-        if not sel or current_animation_index >= len(sel.q):
+        # Stop if we've reached the end of the trajectory data
+        if not sel or current_animation_index >= len(sel.q) - 1:
             self.stop_animation()
             return
 
         self.update_robot_position(sel.q[current_animation_index])
         current_animation_index += 1
+
+        # Update the delay dynamically for the next frame
+        if current_animation_index < len(sel.t) - 1:
+            new_delay = int((sel.t[current_animation_index + 1] - sel.t[current_animation_index]) * 1000)
+            animation_timer.start(new_delay)
+        else:
+            self.stop_animation()
 
     def update_robot_position(self, q):
         robot = get_robot()
@@ -122,7 +134,8 @@ class PlayTrajectoryCommand:
 
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()[0] if FreeCADGui.Selection.getSelection() else None
-        return bool(animation_state != "playing" and len(sel.q)>0 )
+        return bool(animation_state != "playing" and sel and len(sel.q) > 0)
+
 
 
 FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())

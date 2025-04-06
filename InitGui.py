@@ -40,7 +40,6 @@ class Robotics (Workbench):
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
         self.appendToolbar("Trajectory", ["AddConstantVelTrajectoryCommand", "AddTimeOptimizedTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "SaveTrajectoryDataCommand"])
         self.appendToolbar("Validation", ["printDynamics"])
-        self.appendToolbar("Test", ["computeTimeOptimizedTrajectory"])
 
         #self.appendMenu("My New Menu", self.list)
         #self.appendMenu(["An existing Menu", "My submenu"], self.list)

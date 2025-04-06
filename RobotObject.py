@@ -49,7 +49,20 @@ class RobotObject:
                 positionDHCoordinateSystems()
                 positionBodies()
             
-                
+    def __getstate__(self):
+        # 1) Copy the current __dict__
+        state = self.__dict__.copy()
+        # 2) Remove any references to FreeCAD objects that aren’t JSON-serializable
+        #    The easiest approach is typically to remove 'obj' or 'Object', if stored:
+        if "Object" in state:
+            del state["Object"]
+
+
+        return state
+
+    def __setstate__(self, state):
+        # Reassign the pruned or saved attributes back
+        self.__dict__.update(state)
 
 
 class RobotViewProvider:
@@ -81,7 +94,16 @@ class RobotViewProvider:
         FreeCAD.Console.PrintMessage("Robot object was double-clicked\n")
         return True
     
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # If you store references to the raw FreeCAD object or anything
+        # that has a `ViewProviderDocumentObject`, remove it:
+        if "Object" in state:
+            del state["Object"]
+        return state
 
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
 
 

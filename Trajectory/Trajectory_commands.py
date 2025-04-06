@@ -14,7 +14,7 @@ import pstats
 class SolveTrajectoryCommand:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'solve.svg'),
+            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'gear.svg'),
             'MenuText': 'Solve Trajectory',
             'ToolTip': 'Solve inverse kinematics for chosen trajectory'
         }

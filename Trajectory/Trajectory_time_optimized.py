@@ -97,9 +97,9 @@ class TimeOptimizedTrajectoryPoints(TimeOptimizedTrajectory):
 class AddTimeOptimizedTrajectoryCommand:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'trajectory.svg'),
-            'MenuText': 'Add Trajectory',
-            'ToolTip': 'Add a trajectory object'
+            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'trajectory_time_optimized.svg'),
+            'MenuText': 'Add Time Optimized Trajectory',
+            'ToolTip': 'Add a trajectory object for time optimized path planning'
         }
 
     def Activated(self):

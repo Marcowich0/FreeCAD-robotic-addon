@@ -120,9 +120,9 @@ class ConstantVelocityTrajectory(Trajectory):
 class AddConstantVelTrajectoryCommand:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'trajectory.svg'),
-            'MenuText': 'Add Trajectory',
-            'ToolTip': 'Add a trajectory object'
+            'Pixmap': os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Resources', 'icons', 'trajectory_constant_velocity.svg'),
+            'MenuText': 'Add Constant Velocity Trajectory',
+            'ToolTip': 'Add a trajectory object for a path with constant velocity'
         }
 
     def Activated(self):

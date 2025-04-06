@@ -82,7 +82,7 @@ class PlayTrajectoryCommand:
             return
 
         sel = FreeCADGui.Selection.getSelection()[0]
-        if not sel.q:
+        if sel.q is None:
             print("No angles calculated!")
             return
 
@@ -95,7 +95,7 @@ class PlayTrajectoryCommand:
             self.update_robot_position(sel.q[0])
 
         animation_state = "playing"
-        delay = int((sel.DistanceBetweenPoints / sel.Velocity) * 1000)
+        delay = int((sel.t[current_animation_index + 1] - sel.t[current_animation_index]) * 1000)
         animation_timer.start(delay)
 
     def update_animation(self):
@@ -122,8 +122,7 @@ class PlayTrajectoryCommand:
 
     def IsActive(self):
         sel = FreeCADGui.Selection.getSelection()[0] if FreeCADGui.Selection.getSelection() else None
-        return bool(sel and hasattr(sel, 'Type') and sel.Type == 'Trajectory'
-                    and animation_state != "playing" and sel.q)
+        return bool(animation_state != "playing" and len(sel.q)>0 )
 
 
 FreeCADGui.addCommand('PlayTrajectoryCommand', PlayTrajectoryCommand())

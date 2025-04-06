@@ -1,15 +1,15 @@
 import FreeCAD
 import FreeCADGui
 import os
-from main_utils import get_robot, vec_to_numpy, displayMatrix
-from secondary_utils import checkCollision
+from Utils.main_utils import *
+from Utils.secondary_utils import checkCollision
 from forward_kinematics import getDHTransformations, getJacobian
 import numpy as np
 import math
 
-
-
 import inverse_kinematics_cpp
+
+
 class ToTargetPointCommand:
     """Command to solve inverse kinematics for a target position."""
     def __init__(self):
@@ -26,10 +26,7 @@ class ToTargetPointCommand:
         global_pos = np.array(self.get_target_position())
         robot = get_robot()
         q = np.deg2rad(robot.Angles)
-        DHperameters = np.array(robot.DHPerameters)
-        DHperameters[:,0] = 0
-        DHperameters = DHperameters.astype(float)
-        DHperameters[:,1:3] /= 1000
+        DHperameters = getNumericalDH()
 
         displayMatrix(q)
         displayMatrix(getDHTransformations(q, SI = True)[-1])

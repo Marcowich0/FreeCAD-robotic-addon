@@ -48,6 +48,15 @@ def vec_to_numpy(v, n=3):
         return np.array([v.x, v.y, v.z])
     elif n == 4:
         return np.array([v.x, v.y, v.z, 1])
+    
+def numpy_to_vec(v, n=3):
+    # Assumes v is a numpy array of length 3 or 4.
+    if len(v) == 3:
+        return FreeCAD.Vector(v[0], v[1], v[2])
+    elif len(v) == 4:
+        return FreeCAD.Vector(v[0], v[1], v[2], v[3])
+    else:
+        raise ValueError("Input vector must be of length 3 or 4.")
 
 
 def updateGlobalEndEffector():

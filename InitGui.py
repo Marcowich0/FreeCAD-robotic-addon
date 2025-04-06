@@ -5,15 +5,15 @@ import inspect
 import sys  
 import os
 
-import qt_angle_sliders
-import qt_orientation_sliders
-import qt_move_end_effector
+import GUI_elements.qt_angle_sliders
+import GUI_elements.qt_orientation_sliders
+import GUI_elements.qt_move_end_effector
 
 import RobotObject     
-import Trajectory_parent
-import Trajectory_constant_velocity
-import Trajectory_commands
-import Trajectory_time_optimized
+import Trajectory.Trajectory_parent
+import Trajectory.Trajectory_constant_velocity
+import Trajectory.Trajectory_commands
+import Trajectory.Trajectory_time_optimized
 
 import forward_kinematics
 import inverse_kinematics
@@ -38,7 +38,7 @@ class Robotics (Workbench):
         self.appendToolbar("Initial position", ["rotateBodyZeroCommand", "defineEndEffectorCommand", "OrientationCommand"])
         self.appendToolbar("Forward Kinematics", [ "RobotAnglesCommand"])
         self.appendToolbar("Inverse Kinematics", [ "MoveEndEffectorCommand","ToTargetPointCommand"])
-        self.appendToolbar("Trajectory", ["AddConstantVelTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "SaveTrajectoryDataCommand"])
+        self.appendToolbar("Trajectory", ["AddConstantVelTrajectoryCommand", "AddTimeOptimizedTrajectoryCommand", "SolveTrajectoryCommand", "PlayTrajectoryCommand", "PauseTrajectoryCommand", "StopTrajectoryCommand", "SaveTrajectoryDataCommand"])
         self.appendToolbar("Validation", ["printDynamics"])
         self.appendToolbar("Test", ["computeTimeOptimizedTrajectory"])
 

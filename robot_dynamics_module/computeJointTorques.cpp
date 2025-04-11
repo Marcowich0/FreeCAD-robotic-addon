@@ -251,7 +251,7 @@ Scalar computeP(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1> &q,
 
         P += Scalar(masses[i]) * g.dot(comGlobal);
     }
-    return P;
+    return (-1)*P;
 }
 
 // -----------------------------------------------------------------------------

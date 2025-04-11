@@ -14,6 +14,10 @@
 # EXTERNAL cache entries
 ########################
 
+//The directory relative to CMAKE_INSTALL_PREFIX where Eigen3Config.cmake
+// is installed
+CMAKEPACKAGE_INSTALL_DIR:PATH=share/eigen3/cmake
+
 //Path to a program.
 CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/lib.exe
 
@@ -40,6 +44,24 @@ CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=/MD /Zi /O2 /Ob1 /DNDEBUG
 //Libraries linked by default with all C++ applications.
 CMAKE_CXX_STANDARD_LIBRARIES:STRING=kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
 
+//Flags used by the C compiler during all build types.
+CMAKE_C_FLAGS:STRING=/DWIN32 /D_WINDOWS /W3
+
+//Flags used by the C compiler during DEBUG builds.
+CMAKE_C_FLAGS_DEBUG:STRING=/MDd /Zi /Ob0 /Od /RTC1
+
+//Flags used by the C compiler during MINSIZEREL builds.
+CMAKE_C_FLAGS_MINSIZEREL:STRING=/MD /O1 /Ob1 /DNDEBUG
+
+//Flags used by the C compiler during RELEASE builds.
+CMAKE_C_FLAGS_RELEASE:STRING=/MD /O2 /Ob2 /DNDEBUG
+
+//Flags used by the C compiler during RELWITHDEBINFO builds.
+CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=/MD /Zi /O2 /Ob1 /DNDEBUG
+
+//Libraries linked by default with all C applications.
+CMAKE_C_STANDARD_LIBRARIES:STRING=kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
+
 //Flags used by the linker during all build types.
 CMAKE_EXE_LINKER_FLAGS:STRING=/machine:x64
 
@@ -61,8 +83,56 @@ CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE
 //Value Computed by CMake.
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/pkgRedirects
 
+//User executables (bin)
+CMAKE_INSTALL_BINDIR:PATH=bin
+
+//Read-only architecture-independent data (DATAROOTDIR)
+CMAKE_INSTALL_DATADIR:PATH=
+
+//Read-only architecture-independent data root (share)
+CMAKE_INSTALL_DATAROOTDIR:PATH=share
+
+//Documentation root (DATAROOTDIR/doc/PROJECT_NAME)
+CMAKE_INSTALL_DOCDIR:PATH=
+
+//C header files (include)
+CMAKE_INSTALL_INCLUDEDIR:PATH=include
+
+//Info documentation (DATAROOTDIR/info)
+CMAKE_INSTALL_INFODIR:PATH=
+
+//Object code libraries (lib)
+CMAKE_INSTALL_LIBDIR:PATH=lib
+
+//Program executables (libexec)
+CMAKE_INSTALL_LIBEXECDIR:PATH=libexec
+
+//Locale-dependent data (DATAROOTDIR/locale)
+CMAKE_INSTALL_LOCALEDIR:PATH=
+
+//Modifiable single-machine data (var)
+CMAKE_INSTALL_LOCALSTATEDIR:PATH=var
+
+//Man documentation (DATAROOTDIR/man)
+CMAKE_INSTALL_MANDIR:PATH=
+
+//C header files for non-gcc (/usr/include)
+CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
+
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=C:/Program Files/compute_torque
+
+//Run-time variable data (LOCALSTATEDIR/run)
+CMAKE_INSTALL_RUNSTATEDIR:PATH=
+
+//System admin executables (sbin)
+CMAKE_INSTALL_SBINDIR:PATH=sbin
+
+//Modifiable architecture-independent data (com)
+CMAKE_INSTALL_SHAREDSTATEDIR:PATH=com
+
+//Read-only single-machine data (etc)
+CMAKE_INSTALL_SYSCONFDIR:PATH=etc
 
 //Path to a program.
 CMAKE_LINKER:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/Hostx64/x64/link.exe
@@ -98,6 +168,21 @@ CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
 CMAKE_PROJECT_NAME:STATIC=compute_torque
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION:STATIC=3.0.0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_MAJOR:STATIC=3
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_MINOR:STATIC=0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_PATCH:STATIC=0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_TWEAK:STATIC=
 
 //RC compiler
 CMAKE_RC_COMPILER:FILEPATH=C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/rc.exe
@@ -170,14 +255,113 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
+//Toggles the building of the Eigen Blas library
+EIGEN_BUILD_BLAS:BOOL=OFF
+
+//Build benchmark suite
+EIGEN_BUILD_BTL:BOOL=OFF
+
+//Enables the creation of EigenConfig.cmake and related files
+EIGEN_BUILD_CMAKE_PACKAGE:BOOL=OFF
+
+//Toggles the building of the Eigen demos
+EIGEN_BUILD_DEMOS:BOOL=OFF
+
+//Enable creation of Eigen documentation
+EIGEN_BUILD_DOC:BOOL=OFF
+
+//Toggles the building of the included Eigen LAPACK library
+EIGEN_BUILD_LAPACK:BOOL=OFF
+
+//Build sparse benchmark suite
+EIGEN_BUILD_SPBENCH:BOOL=OFF
+
+//Enable creation of Eigen tests.
+EIGEN_BUILD_TESTING:BOOL=OFF
+
+//Leaves tests in the all target, needed by ctest for automatic
+// building.
+EIGEN_LEAVE_TEST_IN_ALL_TARGET:BOOL=OFF
+
+//Value Computed by CMake
+Eigen3_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/eigen
+
+//Value Computed by CMake
+Eigen3_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+Eigen3_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/eigen
+
+//The directory relative to CMAKE_INSTALL_PREFIX where Eigen header
+// files are installed
+INCLUDE_INSTALL_DIR:PATH=include/eigen3
+
+//The directory relative to CMAKE_INSTALL_PREFIX where eigen3.pc
+// is installed
+PKGCONFIG_INSTALL_DIR:PATH=share/pkgconfig
+
+//To enforce that a handle_type_name<> specialization exists
+PYBIND11_DISABLE_HANDLE_TYPE_NAME_DEFAULT_IMPLEMENTATION:BOOL=OFF
+
+//Force new FindPython
+PYBIND11_FINDPYTHON:BOOL=OFF
+
+//Install pybind11 header files?
+PYBIND11_INSTALL:BOOL=OFF
+
+//Override the ABI version, may be used to enable the unstable
+// ABI.
+PYBIND11_INTERNALS_VERSION:STRING=
+
+//Disable search for Python
+PYBIND11_NOPYTHON:BOOL=OFF
+
+//Disable NumPy 2 support to avoid changes to previous pybind11
+// versions.
+PYBIND11_NUMPY_1_ONLY:BOOL=OFF
+
+//Overwrite cached values read from Python library (classic search).
+// Turn off if cross-compiling and manually setting these values.
+PYBIND11_PYTHONLIBS_OVERWRITE:BOOL=ON
+
+//Python version to use for compiling modules
+PYBIND11_PYTHON_VERSION:STRING=
+
+//Use simpler GIL management logic that does not support disassociation
+PYBIND11_SIMPLE_GIL_MANAGEMENT:BOOL=OFF
+
+//Build pybind11 test suite?
+PYBIND11_TEST:BOOL=OFF
+
+//Respect CMAKE_CROSSCOMPILING
+PYBIND11_USE_CROSSCOMPILING:BOOL=OFF
+
+//Path to a program.
+PYTHON_EXECUTABLE:FILEPATH=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe
+
 //Value Computed by CMake
 compute_torque_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build
 
 //Value Computed by CMake
 compute_torque_IS_TOP_LEVEL:STATIC=ON
 
+//Dependencies for the target
+compute_torque_LIB_DEPENDS:STATIC=general;C:/Users/marco/miniconda3/libs/python312.lib;
+
 //Value Computed by CMake
 compute_torque_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
+
+//Dependencies for the target
+inverse_kinematics_cpp_LIB_DEPENDS:STATIC=general;C:/Users/marco/miniconda3/libs/python312.lib;
+
+//Value Computed by CMake
+pybind11_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/pybind11
+
+//Value Computed by CMake
+pybind11_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+pybind11_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11
 
 
 ########################
@@ -212,6 +396,18 @@ CMAKE_CXX_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_CXX_STANDARD_LIBRARIES
 CMAKE_CXX_STANDARD_LIBRARIES-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_FLAGS
+CMAKE_C_FLAGS-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_FLAGS_DEBUG
+CMAKE_C_FLAGS_DEBUG-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_FLAGS_MINSIZEREL
+CMAKE_C_FLAGS_MINSIZEREL-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_FLAGS_RELEASE
+CMAKE_C_FLAGS_RELEASE-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_FLAGS_RELWITHDEBINFO
+CMAKE_C_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_C_STANDARD_LIBRARIES
+CMAKE_C_STANDARD_LIBRARIES-ADVANCED:INTERNAL=1
 //Executable file format
 CMAKE_EXECUTABLE_FORMAT:INTERNAL=Unknown
 //ADVANCED property for variable: CMAKE_EXE_LINKER_FLAGS
@@ -237,6 +433,38 @@ CMAKE_GENERATOR_TOOLSET:INTERNAL=host=x64
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
+//ADVANCED property for variable: CMAKE_INSTALL_BINDIR
+CMAKE_INSTALL_BINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATADIR
+CMAKE_INSTALL_DATADIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DATAROOTDIR
+CMAKE_INSTALL_DATAROOTDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_DOCDIR
+CMAKE_INSTALL_DOCDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INCLUDEDIR
+CMAKE_INSTALL_INCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_INFODIR
+CMAKE_INSTALL_INFODIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBDIR
+CMAKE_INSTALL_LIBDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LIBEXECDIR
+CMAKE_INSTALL_LIBEXECDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALEDIR
+CMAKE_INSTALL_LOCALEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_LOCALSTATEDIR
+CMAKE_INSTALL_LOCALSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_MANDIR
+CMAKE_INSTALL_MANDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_OLDINCLUDEDIR
+CMAKE_INSTALL_OLDINCLUDEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_RUNSTATEDIR
+CMAKE_INSTALL_RUNSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SBINDIR
+CMAKE_INSTALL_SBINDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SHAREDSTATEDIR
+CMAKE_INSTALL_SHAREDSTATEDIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: CMAKE_INSTALL_SYSCONFDIR
+CMAKE_INSTALL_SYSCONFDIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MODULE_LINKER_FLAGS
@@ -252,7 +480,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MT
 CMAKE_MT-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=6
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //noop for ranlib
@@ -298,6 +526,31 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Details about finding PYTHON
+FIND_PACKAGE_MESSAGE_DETAILS_PYTHON:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe3.11
+//Details about finding Python3
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Users/marco/miniconda3/python.exe][C:/Users/marco/miniconda3/libs/python312.lib][C:/Users/marco/miniconda3/include][C:/Users/marco/miniconda3/Lib/site-packages/numpy/_core/include][cfound components: Interpreter Development NumPy Development.Module Development.Embed ][v3.12.9()]
+//Details about finding PythonInterp
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe][v3.11(3.8)]
+//Test HAS_MSVC_GL_LTCG
+HAS_MSVC_GL_LTCG:INTERNAL=1
+PYBIND11_INCLUDE_DIR:INTERNAL=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include
+//ADVANCED property for variable: PYTHON_EXECUTABLE
+PYTHON_EXECUTABLE-ADVANCED:INTERNAL=1
+PYTHON_INCLUDE_DIRS:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/Include
+PYTHON_IS_DEBUG:INTERNAL=0
+PYTHON_LIBRARIES:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib
+PYTHON_MODULE_DEBUG_POSTFIX:INTERNAL=
+PYTHON_MODULE_EXTENSION:INTERNAL=.cp311-win_amd64.pyd
+PYTHON_MODULE_PREFIX:INTERNAL=
+PYTHON_VERSION:INTERNAL=3.11.0
+PYTHON_VERSION_MAJOR:INTERNAL=3
+PYTHON_VERSION_MINOR:INTERNAL=11
+Python_ADDITIONAL_VERSIONS:INTERNAL=3.12;3.11;3.10;3.9;3.8
+//CMAKE_INSTALL_PREFIX during last run
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files/compute_torque
+_PYBIND11_CROSSCOMPILING:INTERNAL=OFF
+_Python:INTERNAL=PYTHON
 //Compiler reason failure
 _Python3_Compiler_REASON_FAILURE:INTERNAL=
 _Python3_DEVELOPMENT_EMBED_SIGNATURE:INTERNAL=652e2596b163f24b77651e3b0fb97719
@@ -319,10 +572,15 @@ _Python3_Interpreter_REASON_FAILURE:INTERNAL=
 _Python3_LIBRARY_DEBUG:INTERNAL=_Python3_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.
 _Python3_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/miniconda3/libs/python312.lib
+_Python3_NUMPY_SIGNATURE:INTERNAL=95c06e48970ead421912e81b37a28a96
 //Path to a file.
-_Python3_NumPy_INCLUDE_DIR:INTERNAL=_Python3_NumPy_INCLUDE_DIR-NOTFOUND
-//NumPy reason failure
-_Python3_NumPy_REASON_FAILURE:INTERNAL=
+_Python3_NumPy_INCLUDE_DIR:INTERNAL=C:/Users/marco/miniconda3/Lib/site-packages/numpy/_core/include
 //Path to a library.
 _Python3_RUNTIME_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/miniconda3/python312.dll
+//True if pybind11 and all required components found on the system
+pybind11_FOUND:INTERNAL=TRUE
+//Directory where pybind11 headers are located
+pybind11_INCLUDE_DIR:INTERNAL=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include
+//Directories where pybind11 and possibly Python headers are located
+pybind11_INCLUDE_DIRS:INTERNAL=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include;C:/Users/marco/AppData/Local/Programs/Python/Python311/Include
 

@@ -3,7 +3,7 @@ import FreeCADGui
 import os
 import numpy as np
 
-from main_utils import get_robot, displayMatrix
+from Utils.main_utils import *
 import compute_torque
 import roboticstoolbox as rtb
 
@@ -26,22 +26,28 @@ class printDynamics:
         M = np.array(robot.Masses[1:])
         InertiaMatrices = np.array([np.array(m) for m in robot.InertiaMatrices[1:]])
         CenterOfMass = np.array([np.array(m) for m in robot.CenterOfMass[1:]])
-        DHperameters = np.array(robot.DHPerameters)
-        DHperameters[:,0] = 0
-        DHperameters = DHperameters.astype(float)
-        DHperameters[:,1:3] /= 1000
+        DHperameters = getNumericalDH()
 
         q = np.deg2rad(robot.Angles)
+
+        print("Example results using:")
+        print("Masses: ", M)
+        print("Inertia Matrices: ")
+        for m in InertiaMatrices:
+             displayMatrix(m)
+        print("Center of Mass: ", CenterOfMass)
+        print("DH Parameters: ", DHperameters)
+        print("Joint angles: ", q)
 
         # Example results using custom function
 
         print("Joint torques C++")
         print("q_dot = 0, q_ddot = 0")
         displayMatrix(compute_torque.computeJointTorques(q, np.zeros_like(robot.Angles), np.zeros_like(robot.Angles), M, InertiaMatrices, CenterOfMass, DHperameters))
-        print("q_dot = 1, q_ddot = 0")
-        displayMatrix(compute_torque.computeJointTorques(q, np.ones_like(robot.Angles), np.zeros_like(robot.Angles), M, InertiaMatrices, CenterOfMass, DHperameters))
-        print("q_dot = 0, q_ddot = 1")
-        displayMatrix(compute_torque.computeJointTorques(q, np.zeros_like(robot.Angles), np.ones_like(robot.Angles), M, InertiaMatrices, CenterOfMass, DHperameters))
+        print("q_dot = 10, q_ddot = 0")
+        displayMatrix(compute_torque.computeJointTorques(q, np.ones_like(robot.Angles)*10, np.zeros_like(robot.Angles), M, InertiaMatrices, CenterOfMass, DHperameters))
+        print("q_dot = 0, q_ddot = 10")
+        displayMatrix(compute_torque.computeJointTorques(q, np.zeros_like(robot.Angles), np.ones_like(robot.Angles)*10, M, InertiaMatrices, CenterOfMass, DHperameters))
 
         #Define robot using roboticstoolbox
         links = []
@@ -66,17 +72,17 @@ class printDynamics:
                 )
                 links.append(link)
         robot_rtb = rtb.DHRobot(links, name="FreeCAD_RTB_Robot")
-        G = [0, 0, 9.81]
+        G = [0, 0, -9.81]
 
         # Example results using roboticstoolbox
         print("  ")
         print("Joint torques RTB")
         print("q_dot = 0, q_ddot = 0")
         displayMatrix(robot_rtb.rne(q, np.zeros_like(robot.Angles), np.zeros_like(robot.Angles), gravity=G))
-        print("q_dot = 1, q_ddot = 0")
-        displayMatrix(robot_rtb.rne(q, np.ones_like(robot.Angles), np.zeros_like(robot.Angles), gravity=G))
-        print("q_dot = 0, q_ddot = 1")
-        displayMatrix(robot_rtb.rne(q, np.zeros_like(robot.Angles), np.ones_like(robot.Angles), gravity=G))
+        print("q_dot = 10, q_ddot = 0")
+        displayMatrix(robot_rtb.rne(q, np.ones_like(robot.Angles)*10, np.zeros_like(robot.Angles), gravity=G))
+        print("q_dot = 0, q_ddot = 10")
+        displayMatrix(robot_rtb.rne(q, np.zeros_like(robot.Angles), np.ones_like(robot.Angles)*10, gravity=G))
 
 
     def IsActive(self):        

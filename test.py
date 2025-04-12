@@ -36,11 +36,6 @@ def compute_torque_roboticstoolbox(q, q_dot, q_ddot, M, InertiaMatrices, CenterO
 
 
 
-
-
-
-
-
 # ------------------------------
 # Define the robot parameters (2-link robot)
 # ------------------------------
@@ -75,9 +70,9 @@ CenterOfMass = np.array([
 # Define joint states (2 DOF)
 # ------------------------------
 # For plotting, we set a configuration. Here we choose the zero configuration.
-q = np.array([np.pi/4,np.pi/4])
-q_dot = np.array([10, 10])
-q_ddot = np.array([2,5])
+q = np.array([np.pi/5,np.pi/3])
+q_dot = np.array([3, 7])
+q_ddot = np.array([4,9])*0
 
 
 tau_cpp = compute_torque.computeJointTorques(
@@ -95,7 +90,7 @@ tau_rtb = compute_torque_roboticstoolbox(q, q_dot, q_ddot, M, InertiaMatrices, C
 def print_torques(label, tau):
     print(f"{label} Torque Output:")
     for i, t in enumerate(tau):
-        print(f"  Joint {i+1}: {t: .6f}")
+        print(f"  Joint {i+1}: {t}")
     print()
 
 print("Planar Robot Experiment (Static Configuration)")
@@ -109,8 +104,4 @@ for I in InertiaMatrices:
 
 print_torques("C++", tau_cpp)
 print_torques("Robotics Toolbox", tau_rtb)
-
-norm_cpp = np.linalg.norm(tau_cpp) + 1e-12
-rel_error_rtb = np.linalg.norm(tau_cpp - tau_rtb) / norm_cpp
-print("Relative error (C++ vs Robotics Toolbox): {:.6e}".format(rel_error_rtb))
 

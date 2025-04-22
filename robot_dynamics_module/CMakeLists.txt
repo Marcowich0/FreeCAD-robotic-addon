@@ -1,3 +1,8 @@
+set(MY_WORKBENCH_VERSION_MAJOR 1)
+set(MY_WORKBENCH_VERSION_MINOR 0)
+set(MY_WORKBENCH_VERSION_PATCH 0)
+set(MY_WORKBENCH_VERSION "${MY_WORKBENCH_VERSION_MAJOR}.${MY_WORKBENCH_VERSION_MINOR}.${MY_WORKBENCH_VERSION_PATCH}")
+
 cmake_minimum_required(VERSION 3.10)
 project(compute_torque LANGUAGES CXX)
 
@@ -12,20 +17,22 @@ add_subdirectory(external/eigen)
 add_library(compute_torque MODULE computeJointTorques.cpp)
 target_include_directories(compute_torque PRIVATE 
     ${Python3_INCLUDE_DIRS}
-    "D:/FreeCAD/bin/Lib/site-packages/numpy/_core/include"
+    ${Python3_NumPy_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/external/eigen
 )
 target_compile_features(compute_torque PRIVATE cxx_std_14)
 target_link_libraries(compute_torque PRIVATE ${Python3_LIBRARIES} pybind11::module)
+target_compile_definitions(compute_torque PRIVATE WORKBENCH_VERSION="${MY_WORKBENCH_VERSION}")
 set_target_properties(compute_torque PROPERTIES PREFIX "" SUFFIX ".pyd")
 
 # Create the inverse_kinematics module (IK)
 add_library(inverse_kinematics_cpp MODULE inverseKinematicSolver.cpp)
 target_include_directories(inverse_kinematics_cpp PRIVATE 
     ${Python3_INCLUDE_DIRS}
-    "D:/FreeCAD/bin/Lib/site-packages/numpy/_core/include"
+    ${Python3_NumPy_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/external/eigen
 )
 target_compile_features(inverse_kinematics_cpp PRIVATE cxx_std_14)
 target_link_libraries(inverse_kinematics_cpp PRIVATE ${Python3_LIBRARIES} pybind11::module)
+target_compile_definitions(inverse_kinematics_cpp PRIVATE WORKBENCH_VERSION="${MY_WORKBENCH_VERSION}")
 set_target_properties(inverse_kinematics_cpp PROPERTIES PREFIX "" SUFFIX ".pyd")

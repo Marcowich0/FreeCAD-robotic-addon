@@ -510,4 +510,11 @@ PYBIND11_MODULE(compute_torque, m)
           py::arg("comPositions"),
           py::arg("DHparams"),
           "Return the D, C, and g matrices for debugging purposes.");
+
+    m.def("get_version", []() {
+    return WORKBENCH_VERSION;
+}, "Returns the current version of the workbench library.");
 }
+
+
+

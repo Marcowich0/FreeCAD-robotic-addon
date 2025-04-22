@@ -200,4 +200,8 @@ PYBIND11_MODULE(inverse_kinematics_cpp, m)
           py::arg("DHparams"),
           "Solve inverse kinematics using a damped LS approach with fixed iteration/damping/tolerance.\n"
           "Returns (converged, final_angles_in_radians).");
+        
+    m.def("get_version", []() {
+    return WORKBENCH_VERSION;
+}, "Returns the current version of the workbench library.");
 }

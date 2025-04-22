@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include" /external:I "C:/Users/marco/AppData/Local/Programs/Python/Python311/Include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -102,16 +102,16 @@
       <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;CMAKE_INTDIR="Debug";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;WORKBENCH_VERSION="1.0.0";CMAKE_INTDIR="Debug";compute_torque_EXPORTS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\";compute_torque_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;WORKBENCH_VERSION=\"1.0.0\";CMAKE_INTDIR=\"Debug\";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -134,7 +134,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include" /external:I "C:/Users/marco/AppData/Local/Programs/Python/Python311/Include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -149,18 +149,18 @@
       <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;WORKBENCH_VERSION="1.0.0";CMAKE_INTDIR="Release";compute_torque_EXPORTS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\";compute_torque_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;WORKBENCH_VERSION=\"1.0.0\";CMAKE_INTDIR=\"Release\";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -183,7 +183,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include" /external:I "C:/Users/marco/AppData/Local/Programs/Python/Python311/Include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -198,18 +198,18 @@
       <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="MinSizeRel";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;WORKBENCH_VERSION="1.0.0";CMAKE_INTDIR="MinSizeRel";compute_torque_EXPORTS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"MinSizeRel\";compute_torque_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;WORKBENCH_VERSION=\"1.0.0\";CMAKE_INTDIR=\"MinSizeRel\";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -232,7 +232,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /external:I "D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module/external/pybind11/include" /external:I "C:/Users/marco/AppData/Local/Programs/Python/Python311/Include"</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -248,16 +248,16 @@
       <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="RelWithDebInfo";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;WORKBENCH_VERSION="1.0.0";CMAKE_INTDIR="RelWithDebInfo";compute_torque_EXPORTS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"RelWithDebInfo\";compute_torque_EXPORTS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;WORKBENCH_VERSION=\"1.0.0\";CMAKE_INTDIR=\"RelWithDebInfo\";compute_torque_EXPORTS</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;D:\FreeCAD\bin\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\marco\miniconda3\include;C:\Users\marco\miniconda3\Lib\site-packages\numpy\_core\include;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\eigen;D:\FreeCAD\Mod\FreeCAD-robotic-addon\robot_dynamics_module\external\pybind11\include;C:\Users\marco\AppData\Local\Programs\Python\Python311\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>

@@ -2,7 +2,7 @@
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files/compute_torque")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files/freecad_robotics")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -33,10 +33,37 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for each subdirectory.
+  # Include the install script for the subdirectory.
   include("D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/pybind11/cmake_install.cmake")
-  include("D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/eigen/cmake_install.cmake")
+endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/eigen/cmake_install.cmake")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  if(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/Debug/compute_torque.pyd")
+  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/Release/compute_torque.pyd")
+  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/MinSizeRel/compute_torque.pyd")
+  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/RelWithDebInfo/compute_torque.pyd")
+  endif()
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
+  if(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/Debug/inverse_kinematics_cpp.pyd")
+  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/Release/inverse_kinematics_cpp.pyd")
+  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/MinSizeRel/inverse_kinematics_cpp.pyd")
+  elseif(CMAKE_INSTALL_CONFIG_NAME MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
+    file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/freecad_robotics" TYPE MODULE FILES "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/RelWithDebInfo/inverse_kinematics_cpp.pyd")
+  endif()
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT

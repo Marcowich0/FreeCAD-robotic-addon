@@ -27,37 +27,37 @@ CMAKE_AR:FILEPATH=C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Too
 CMAKE_CONFIGURATION_TYPES:STRING=Debug;Release;MinSizeRel;RelWithDebInfo
 
 //Flags used by the CXX compiler during all build types.
-CMAKE_CXX_FLAGS:STRING=/DWIN32 /D_WINDOWS /W3 /GR /EHsc
+CMAKE_CXX_FLAGS:STRING=/DWIN32 /D_WINDOWS /GR /EHsc
 
 //Flags used by the CXX compiler during DEBUG builds.
-CMAKE_CXX_FLAGS_DEBUG:STRING=/MDd /Zi /Ob0 /Od /RTC1
+CMAKE_CXX_FLAGS_DEBUG:STRING=/Zi /Ob0 /Od /RTC1
 
 //Flags used by the CXX compiler during MINSIZEREL builds.
-CMAKE_CXX_FLAGS_MINSIZEREL:STRING=/MD /O1 /Ob1 /DNDEBUG
+CMAKE_CXX_FLAGS_MINSIZEREL:STRING=/O1 /Ob1 /DNDEBUG
 
 //Flags used by the CXX compiler during RELEASE builds.
-CMAKE_CXX_FLAGS_RELEASE:STRING=/MD /O2 /Ob2 /DNDEBUG
+CMAKE_CXX_FLAGS_RELEASE:STRING=/O2 /Ob2 /DNDEBUG
 
 //Flags used by the CXX compiler during RELWITHDEBINFO builds.
-CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=/MD /Zi /O2 /Ob1 /DNDEBUG
+CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=/Zi /O2 /Ob1 /DNDEBUG
 
 //Libraries linked by default with all C++ applications.
 CMAKE_CXX_STANDARD_LIBRARIES:STRING=kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
 
 //Flags used by the C compiler during all build types.
-CMAKE_C_FLAGS:STRING=/DWIN32 /D_WINDOWS /W3
+CMAKE_C_FLAGS:STRING=/DWIN32 /D_WINDOWS
 
 //Flags used by the C compiler during DEBUG builds.
-CMAKE_C_FLAGS_DEBUG:STRING=/MDd /Zi /Ob0 /Od /RTC1
+CMAKE_C_FLAGS_DEBUG:STRING=/Zi /Ob0 /Od /RTC1
 
 //Flags used by the C compiler during MINSIZEREL builds.
-CMAKE_C_FLAGS_MINSIZEREL:STRING=/MD /O1 /Ob1 /DNDEBUG
+CMAKE_C_FLAGS_MINSIZEREL:STRING=/O1 /Ob1 /DNDEBUG
 
 //Flags used by the C compiler during RELEASE builds.
-CMAKE_C_FLAGS_RELEASE:STRING=/MD /O2 /Ob2 /DNDEBUG
+CMAKE_C_FLAGS_RELEASE:STRING=/O2 /Ob2 /DNDEBUG
 
 //Flags used by the C compiler during RELWITHDEBINFO builds.
-CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=/MD /Zi /O2 /Ob1 /DNDEBUG
+CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=/Zi /O2 /Ob1 /DNDEBUG
 
 //Libraries linked by default with all C applications.
 CMAKE_C_STANDARD_LIBRARIES:STRING=kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib
@@ -120,7 +120,7 @@ CMAKE_INSTALL_MANDIR:PATH=
 CMAKE_INSTALL_OLDINCLUDEDIR:PATH=/usr/include
 
 //Install path prefix, prepended onto install directories.
-CMAKE_INSTALL_PREFIX:PATH=C:/Program Files/compute_torque
+CMAKE_INSTALL_PREFIX:PATH=C:/Program Files/freecad_robotics
 
 //Run-time variable data (LOCALSTATEDIR/run)
 CMAKE_INSTALL_RUNSTATEDIR:PATH=
@@ -167,7 +167,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=compute_torque
+CMAKE_PROJECT_NAME:STATIC=freecad_robotics
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION:STATIC=3.0.0
@@ -340,19 +340,13 @@ PYBIND11_USE_CROSSCOMPILING:BOOL=OFF
 PYTHON_EXECUTABLE:FILEPATH=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe
 
 //Value Computed by CMake
-compute_torque_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build
+freecad_robotics_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build
 
 //Value Computed by CMake
-compute_torque_IS_TOP_LEVEL:STATIC=ON
-
-//Dependencies for the target
-compute_torque_LIB_DEPENDS:STATIC=general;C:/Users/marco/miniconda3/libs/python312.lib;
+freecad_robotics_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-compute_torque_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
-
-//Dependencies for the target
-inverse_kinematics_cpp_LIB_DEPENDS:STATIC=general;C:/Users/marco/miniconda3/libs/python312.lib;
+freecad_robotics_SOURCE_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/robot_dynamics_module
 
 //Value Computed by CMake
 pybind11_BINARY_DIR:STATIC=D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/external/pybind11
@@ -529,7 +523,7 @@ CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Details about finding PYTHON
 FIND_PACKAGE_MESSAGE_DETAILS_PYTHON:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe3.11
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Users/marco/miniconda3/python.exe][C:/Users/marco/miniconda3/libs/python312.lib][C:/Users/marco/miniconda3/include][C:/Users/marco/miniconda3/Lib/site-packages/numpy/_core/include][cfound components: Interpreter Development NumPy Development.Module Development.Embed ][v3.12.9()]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe][C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib][C:/Users/marco/AppData/Local/Programs/Python/Python311/include][C:/Users/marco/AppData/Local/Programs/Python/Python311/Lib/site-packages/numpy/_core/include][cfound components: Interpreter Development NumPy Development.Module Development.Embed ][v3.11.0()]
 //Details about finding PythonInterp
 FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe][v3.11(3.8)]
 //Test HAS_MSVC_GL_LTCG
@@ -548,35 +542,33 @@ PYTHON_VERSION_MAJOR:INTERNAL=3
 PYTHON_VERSION_MINOR:INTERNAL=11
 Python_ADDITIONAL_VERSIONS:INTERNAL=3.12;3.11;3.10;3.9;3.8
 //CMAKE_INSTALL_PREFIX during last run
-_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files/compute_torque
+_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files/freecad_robotics
 _PYBIND11_CROSSCOMPILING:INTERNAL=OFF
 _Python:INTERNAL=PYTHON
 //Compiler reason failure
 _Python3_Compiler_REASON_FAILURE:INTERNAL=
-_Python3_DEVELOPMENT_EMBED_SIGNATURE:INTERNAL=652e2596b163f24b77651e3b0fb97719
-_Python3_DEVELOPMENT_MODULE_SIGNATURE:INTERNAL=652e2596b163f24b77651e3b0fb97719
+_Python3_DEVELOPMENT_EMBED_SIGNATURE:INTERNAL=04ca7710870d947a7b494c924a49c789
+_Python3_DEVELOPMENT_MODULE_SIGNATURE:INTERNAL=04ca7710870d947a7b494c924a49c789
 //Development reason failure
 _Python3_Development_REASON_FAILURE:INTERNAL=
 //Path to a program.
-_Python3_EXECUTABLE:INTERNAL=C:/Users/marco/miniconda3/python.exe
+_Python3_EXECUTABLE:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe
 //Path to a program.
 _Python3_EXECUTABLE_DEBUG:INTERNAL=_Python3_EXECUTABLE_DEBUG-NOTFOUND
 //Path to a file.
-_Python3_INCLUDE_DIR:INTERNAL=C:/Users/marco/miniconda3/include
+_Python3_INCLUDE_DIR:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/include
 //Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;12;9;64;<none>;cp312-win_amd64;;C:\Users\marco\miniconda3\Lib;C:\Users\marco\miniconda3\Lib;C:\Users\marco\miniconda3\Lib\site-packages;C:\Users\marco\miniconda3\Lib\site-packages
-_Python3_INTERPRETER_SIGNATURE:INTERNAL=82b7741100edbc0b189da759bf1e4c96
-//Interpreter reason failure
-_Python3_Interpreter_REASON_FAILURE:INTERNAL=
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;0;64;<none>;cp311-win_amd64;;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=9758ff5970dfd6e84ce222893d83f5c0
 //Path to a library.
 _Python3_LIBRARY_DEBUG:INTERNAL=_Python3_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.
-_Python3_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/miniconda3/libs/python312.lib
-_Python3_NUMPY_SIGNATURE:INTERNAL=95c06e48970ead421912e81b37a28a96
+_Python3_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib
+_Python3_NUMPY_SIGNATURE:INTERNAL=8fbaca2ecb438941af57ecbe6e57a50f
 //Path to a file.
-_Python3_NumPy_INCLUDE_DIR:INTERNAL=C:/Users/marco/miniconda3/Lib/site-packages/numpy/_core/include
+_Python3_NumPy_INCLUDE_DIR:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/Lib/site-packages/numpy/_core/include
 //Path to a library.
-_Python3_RUNTIME_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/miniconda3/python312.dll
+_Python3_RUNTIME_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/python311.dll
 //True if pybind11 and all required components found on the system
 pybind11_FOUND:INTERNAL=TRUE
 //Directory where pybind11 headers are located

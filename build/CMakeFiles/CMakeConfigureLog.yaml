@@ -5,7 +5,7 @@ events:
     kind: "message-v1"
     backtrace:
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:205 (message)"
-      - "CMakeLists.txt:2 (project)"
+      - "CMakeLists.txt:7 (project)"
     message: |
       The system is: Windows - 10.0.26100 - AMD64
   -
@@ -14,7 +14,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:2 (project)"
+      - "CMakeLists.txt:7 (project)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
       Compiler:  
@@ -24,7 +24,7 @@ events:
       The output was:
       0
       MSBuild version 17.13.15+18b3035f6 for .NET Framework
-      Build started 05-04-2025 21:19:47.
+      Build started 23-04-2025 10:28:34.
       
       Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\3.31.0-rc3\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -53,7 +53,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.48
+      Time Elapsed 00:00:00.53
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -68,55 +68,55 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:2 (project)"
+      - "CMakeLists.txt:7 (project)"
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-3iny0t"
-      binary: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-3iny0t"
+      source: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-zjiqsn"
+      binary: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-zjiqsn"
     cmakeVariables:
-      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
-      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
       CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
     buildResult:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-3iny0t'
+        Change Dir: 'D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-zjiqsn'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_b1a30.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_31c96.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.13.15+18b3035f6 for .NET Framework
-        Build started 05-04-2025 21:19:48.
+        Build started 23-04-2025 10:28:35.
         
-        Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3iny0t\\cmTC_b1a30.vcxproj" on node 1 (default targets).
+        Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-zjiqsn\\cmTC_31c96.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_b1a30.dir\\Debug\\".
+          Creating directory "cmTC_31c96.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3iny0t\\Debug\\".
-          Creating directory "cmTC_b1a30.dir\\Debug\\cmTC_b1a30.tlog\\".
+          Creating directory "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-zjiqsn\\Debug\\".
+          Creating directory "cmTC_31c96.dir\\Debug\\cmTC_31c96.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_b1a30.dir\\Debug\\cmTC_b1a30.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_b1a30.dir\\Debug\\cmTC_b1a30.tlog\\unsuccessfulbuild".
+          Creating "cmTC_31c96.dir\\Debug\\cmTC_31c96.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_31c96.dir\\Debug\\cmTC_31c96.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b1a30.dir\\Debug\\\\" /Fd"cmTC_b1a30.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_31c96.dir\\Debug\\\\" /Fd"cmTC_31c96.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.43.34808 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b1a30.dir\\Debug\\\\" /Fd"cmTC_b1a30.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_31c96.dir\\Debug\\\\" /Fd"cmTC_31c96.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
           CMakeCXXCompilerABI.cpp
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3iny0t\\Debug\\cmTC_b1a30.exe" /INCREMENTAL /ILK:"cmTC_b1a30.dir\\Debug\\cmTC_b1a30.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-3iny0t/Debug/cmTC_b1a30.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-3iny0t/Debug/cmTC_b1a30.lib" /MACHINE:X64  /machine:x64 cmTC_b1a30.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_b1a30.vcxproj -> D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3iny0t\\Debug\\cmTC_b1a30.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-zjiqsn\\Debug\\cmTC_31c96.exe" /INCREMENTAL /ILK:"cmTC_31c96.dir\\Debug\\cmTC_31c96.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-zjiqsn/Debug/cmTC_31c96.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-zjiqsn/Debug/cmTC_31c96.lib" /MACHINE:X64  /machine:x64 cmTC_31c96.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_31c96.vcxproj -> D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-zjiqsn\\Debug\\cmTC_31c96.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_b1a30.dir\\Debug\\cmTC_b1a30.tlog\\unsuccessfulbuild".
-          Touching "cmTC_b1a30.dir\\Debug\\cmTC_b1a30.tlog\\cmTC_b1a30.lastbuildstate".
-        Done Building Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3iny0t\\cmTC_b1a30.vcxproj" (default targets).
+          Deleting file "cmTC_31c96.dir\\Debug\\cmTC_31c96.tlog\\unsuccessfulbuild".
+          Touching "cmTC_31c96.dir\\Debug\\cmTC_31c96.tlog\\cmTC_31c96.lastbuildstate".
+        Done Building Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-zjiqsn\\cmTC_31c96.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.34
+        Time Elapsed 00:00:00.42
         
       exitCode: 0
   -
@@ -124,7 +124,7 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:2 (project)"
+      - "CMakeLists.txt:7 (project)"
     message: |
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
@@ -142,15 +142,11 @@ events:
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
       - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:2 (project)"
+      - "CMakeLists.txt:7 (project)"
     message: |
       Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/bin/HostX64/x64/link.exe" "-v"
       Microsoft (R) Incremental Linker Version 14.43.34808.0
       Copyright (C) Microsoft Corporation.  All rights reserved.
-...
-
----
-events:
   -
     kind: "try_compile-v1"
     backtrace:
@@ -164,59 +160,59 @@ events:
     checks:
       - "Performing Test HAS_MSVC_GL_LTCG"
     directories:
-      source: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-w7lhpg"
-      binary: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-w7lhpg"
+      source: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-kn544r"
+      binary: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-kn544r"
     cmakeVariables:
-      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
-      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /GR /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
       CMAKE_MODULE_PATH: ""
     buildResult:
       variable: "HAS_MSVC_GL_LTCG"
       cached: true
       stdout: |
-        Change Dir: 'D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-w7lhpg'
+        Change Dir: 'D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-kn544r'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_a825a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_4db63.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.13.15+18b3035f6 for .NET Framework
-        Build started 08-04-2025 20:53:09.
+        Build started 23-04-2025 10:28:37.
         
-        Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\cmTC_a825a.vcxproj" on node 1 (default targets).
+        Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\cmTC_4db63.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_a825a.dir\\Debug\\".
+          Creating directory "cmTC_4db63.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\Debug\\".
-          Creating directory "cmTC_a825a.dir\\Debug\\cmTC_a825a.tlog\\".
+          Creating directory "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\Debug\\".
+          Creating directory "cmTC_4db63.dir\\Debug\\cmTC_4db63.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_a825a.dir\\Debug\\cmTC_a825a.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_a825a.dir\\Debug\\cmTC_a825a.tlog\\unsuccessfulbuild".
+          Creating "cmTC_4db63.dir\\Debug\\cmTC_4db63.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_4db63.dir\\Debug\\cmTC_4db63.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_a825a.dir\\Debug\\\\" /Fd"cmTC_a825a.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\src.cxx"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4db63.dir\\Debug\\\\" /Fd"cmTC_4db63.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\src.cxx"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.43.34808 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_a825a.dir\\Debug\\\\" /Fd"cmTC_a825a.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\src.cxx"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /GL /D _MBCS /D WIN32 /D _WINDOWS /D HAS_MSVC_GL_LTCG /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_4db63.dir\\Debug\\\\" /Fd"cmTC_4db63.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\src.cxx"
           src.cxx
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\Debug\\cmTC_a825a.exe" /INCREMENTAL /ILK:"cmTC_a825a.dir\\Debug\\cmTC_a825a.ilk" /NOLOGO "-LTCG" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-w7lhpg/Debug/cmTC_a825a.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-w7lhpg/Debug/cmTC_a825a.lib" /MACHINE:X64  /machine:x64 cmTC_a825a.dir\\Debug\\src.obj
-        LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\cmTC_a825a.vcxproj]
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\Debug\\cmTC_4db63.exe" /INCREMENTAL /ILK:"cmTC_4db63.dir\\Debug\\cmTC_4db63.ilk" /NOLOGO "-LTCG" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-kn544r/Debug/cmTC_4db63.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-kn544r/Debug/cmTC_4db63.lib" /MACHINE:X64  /machine:x64 cmTC_4db63.dir\\Debug\\src.obj
+        LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\cmTC_4db63.vcxproj]
           Generating code
           Finished generating code
-          cmTC_a825a.vcxproj -> D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\Debug\\cmTC_a825a.exe
+          cmTC_4db63.vcxproj -> D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\Debug\\cmTC_4db63.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_a825a.dir\\Debug\\cmTC_a825a.tlog\\unsuccessfulbuild".
-          Touching "cmTC_a825a.dir\\Debug\\cmTC_a825a.tlog\\cmTC_a825a.lastbuildstate".
-        Done Building Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\cmTC_a825a.vcxproj" (default targets).
+          Deleting file "cmTC_4db63.dir\\Debug\\cmTC_4db63.tlog\\unsuccessfulbuild".
+          Touching "cmTC_4db63.dir\\Debug\\cmTC_4db63.tlog\\cmTC_4db63.lastbuildstate".
+        Done Building Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\cmTC_4db63.vcxproj" (default targets).
         
         Build succeeded.
         
-        "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\cmTC_a825a.vcxproj" (default target) (1) ->
+        "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\cmTC_4db63.vcxproj" (default target) (1) ->
         (Link target) -> 
-          LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-w7lhpg\\cmTC_a825a.vcxproj]
+          LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification [D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-kn544r\\cmTC_4db63.vcxproj]
         
             1 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.67
+        Time Elapsed 00:00:00.35
         
       exitCode: 0
   -
@@ -235,7 +231,7 @@ events:
       The output was:
       0
       MSBuild version 17.13.15+18b3035f6 for .NET Framework
-      Build started 08-04-2025 20:53:11.
+      Build started 23-04-2025 10:28:37.
       
       Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\3.31.0-rc3\\CompilerIdC\\CompilerIdC.vcxproj" on node 1 (default targets).
       PrepareForBuild:
@@ -264,7 +260,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.43
+      Time Elapsed 00:00:00.36
       
       
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
@@ -283,50 +279,50 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-rqvmmm"
-      binary: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-rqvmmm"
+      source: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-1j2okg"
+      binary: "D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-1j2okg"
     cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
-      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
       CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
     buildResult:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-rqvmmm'
+        Change Dir: 'D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-1j2okg'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_7685d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_1d421.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         MSBuild version 17.13.15+18b3035f6 for .NET Framework
-        Build started 08-04-2025 20:53:11.
+        Build started 23-04-2025 10:28:38.
         
-        Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rqvmmm\\cmTC_7685d.vcxproj" on node 1 (default targets).
+        Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1j2okg\\cmTC_1d421.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "cmTC_7685d.dir\\Debug\\".
+          Creating directory "cmTC_1d421.dir\\Debug\\".
           Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rqvmmm\\Debug\\".
-          Creating directory "cmTC_7685d.dir\\Debug\\cmTC_7685d.tlog\\".
+          Creating directory "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1j2okg\\Debug\\".
+          Creating directory "cmTC_1d421.dir\\Debug\\cmTC_1d421.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_7685d.dir\\Debug\\cmTC_7685d.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_7685d.dir\\Debug\\cmTC_7685d.tlog\\unsuccessfulbuild".
+          Creating "cmTC_1d421.dir\\Debug\\cmTC_1d421.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Touching "cmTC_1d421.dir\\Debug\\cmTC_1d421.tlog\\unsuccessfulbuild".
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_7685d.dir\\Debug\\\\" /Fd"cmTC_7685d.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\CL.exe /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_1d421.dir\\Debug\\\\" /Fd"cmTC_1d421.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.43.34808 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_7685d.dir\\Debug\\\\" /Fd"cmTC_7685d.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+          cl /c /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_1d421.dir\\Debug\\\\" /Fd"cmTC_1d421.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
           CMakeCCompilerABI.c
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rqvmmm\\Debug\\cmTC_7685d.exe" /INCREMENTAL /ILK:"cmTC_7685d.dir\\Debug\\cmTC_7685d.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-rqvmmm/Debug/cmTC_7685d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-rqvmmm/Debug/cmTC_7685d.lib" /MACHINE:X64  /machine:x64 cmTC_7685d.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_7685d.vcxproj -> D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rqvmmm\\Debug\\cmTC_7685d.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.43.34808\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1j2okg\\Debug\\cmTC_1d421.exe" /INCREMENTAL /ILK:"cmTC_1d421.dir\\Debug\\cmTC_1d421.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-1j2okg/Debug/cmTC_1d421.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:/FreeCAD/Mod/FreeCAD-robotic-addon/build/CMakeFiles/CMakeScratch/TryCompile-1j2okg/Debug/cmTC_1d421.lib" /MACHINE:X64  /machine:x64 cmTC_1d421.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_1d421.vcxproj -> D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1j2okg\\Debug\\cmTC_1d421.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_7685d.dir\\Debug\\cmTC_7685d.tlog\\unsuccessfulbuild".
-          Touching "cmTC_7685d.dir\\Debug\\cmTC_7685d.tlog\\cmTC_7685d.lastbuildstate".
-        Done Building Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rqvmmm\\cmTC_7685d.vcxproj" (default targets).
+          Deleting file "cmTC_1d421.dir\\Debug\\cmTC_1d421.tlog\\unsuccessfulbuild".
+          Touching "cmTC_1d421.dir\\Debug\\cmTC_1d421.tlog\\cmTC_1d421.lastbuildstate".
+        Done Building Project "D:\\FreeCAD\\Mod\\FreeCAD-robotic-addon\\build\\CMakeFiles\\CMakeScratch\\TryCompile-1j2okg\\cmTC_1d421.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.35
+        Time Elapsed 00:00:00.34
         
       exitCode: 0
   -

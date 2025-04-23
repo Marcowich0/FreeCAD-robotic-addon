@@ -4,3 +4,6 @@
 [submodule "robot_dynamics_module/external/eigen"]
 	path = robot_dynamics_module/external/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "robot_dynamics_module/external/toppra"]
+	path = robot_dynamics_module/external/toppra
+	url = https://github.com/hungpham2511/toppra.git

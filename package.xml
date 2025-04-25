@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+
+  <name>FreeCAD-robotic-addon</name>
+
+  <description>This repository contains the FreeCAD Robotic Addon, developed as part of Marc Clausen's Master Thesis at the Technical University of Denmark (DTU).</description>
+
+  <version>2025.4.25</version>
+
+  <date>2025-04-25</date>
+
+  <maintainer email="98757467+Marcowich0@users.noreply.github.com">Marc</maintainer>
+
+  <license file="LICENSE">MIT</license>
+
+  <url branch="main" type="repository">https://github.com/Marcowich0/FreeCAD-robotic-addon</url>
+
+  <url type="readme">https://github.com/Marcowich0/FreeCAD-robotic-addon/raw/main/README.md</url>
+
+  <icon>Resources/icons/robotArm2.svg</icon>
+
+  <content>
+    <workbench>
+      <classname>Robotics</classname>
+      <subdirectory>./</subdirectory>
+    </workbench>
+  </content>
+
+</package>

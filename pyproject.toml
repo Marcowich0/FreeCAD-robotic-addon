@@ -1,10 +1,10 @@
 [build-system]
 requires = [
-    "scikit-build-core>=0.5",
-    "pybind11",
-    "numpy==1.26.4",       # unified NumPy version
-    "setuptools",
-    "wheel"
+  "scikit-build-core>=0.5",
+  "pybind11",
+  "numpy",
+  "setuptools",
+  "wheel",
 ]
 build-backend = "scikit_build_core.build"
 
@@ -12,18 +12,27 @@ build-backend = "scikit_build_core.build"
 name = "freecad_robotics"
 version = "1.0.0"
 description = "FreeCAD Robotics Workbench with C++ bindings via pybind11"
-authors = [
-    { name = "Your Name", email = "you@example.com" }
-]
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+  { name = "Your Name", email = "you@example.com" }
+]
 
 dependencies = [
-    "numpy==1.26.4",
-    "toppra==0.5.3"
-    ##"toppra @ file:robot_dynamics_module/external/toppra"
+  "numpy",
+  "colorama",
+  "matplotlib",
+  "sympy",
+  "ipykernel",
+  "toppra"
 ]
+
+[tool.setuptools.packages.find]
+where = ["robot_dynamics_module/external"]
 
 [tool.scikit-build]
 cmake.source-dir = "robot_dynamics_module"
-wheel.packages = ["freecad_robotics"]
+wheel.packages = [
+  "freecad_robotics",
+  "toppra",
+]

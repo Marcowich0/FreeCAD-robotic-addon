@@ -7,6 +7,3 @@
 [submodule "robot_dynamics_module/external/toppra"]
 	path = robot_dynamics_module/external/toppra
 	url = https://github.com/hungpham2511/toppra.git
-[submodule "robot_dynamics_module/external/roboticstoolbox"]
-	path = robot_dynamics_module/external/roboticstoolbox
-	url = https://github.com/petercorke/robotics-toolbox-python.git

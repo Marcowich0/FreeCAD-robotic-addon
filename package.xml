@@ -21,6 +21,7 @@
 
   <content>
     <workbench>
+      <depend optional="False" type="automatic">toppra</depend>
       <classname>Robotics</classname>
       <subdirectory>./</subdirectory>
     </workbench>

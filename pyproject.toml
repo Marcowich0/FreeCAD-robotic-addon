@@ -24,7 +24,7 @@ dependencies = [
   "matplotlib",
   "sympy",
   "ipykernel",
-  "toppra"
+  "toppra @ file:robot_dynamics_module/external/toppra",
 ]
 
 [tool.setuptools.packages.find]

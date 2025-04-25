@@ -1,3 +1,0 @@
-workbenches=
-pylibs=toppra
-optionalpylibs=

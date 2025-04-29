@@ -474,7 +474,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_MT
 CMAKE_MT-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=6
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //noop for ranlib
@@ -545,30 +545,25 @@ Python_ADDITIONAL_VERSIONS:INTERNAL=3.12;3.11;3.10;3.9;3.8
 _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files/freecad_robotics
 _PYBIND11_CROSSCOMPILING:INTERNAL=OFF
 _Python:INTERNAL=PYTHON
+//Path to a program.
+_Python3_CONFIG:INTERNAL=_Python3_CONFIG-NOTFOUND
 //Compiler reason failure
 _Python3_Compiler_REASON_FAILURE:INTERNAL=
-_Python3_DEVELOPMENT_EMBED_SIGNATURE:INTERNAL=04ca7710870d947a7b494c924a49c789
-_Python3_DEVELOPMENT_MODULE_SIGNATURE:INTERNAL=04ca7710870d947a7b494c924a49c789
 //Development reason failure
 _Python3_Development_REASON_FAILURE:INTERNAL=
 //Path to a program.
-_Python3_EXECUTABLE:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/python.exe
-//Path to a program.
-_Python3_EXECUTABLE_DEBUG:INTERNAL=_Python3_EXECUTABLE_DEBUG-NOTFOUND
+_Python3_EXECUTABLE:INTERNAL=_Python3_EXECUTABLE-NOTFOUND
 //Path to a file.
-_Python3_INCLUDE_DIR:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/include
-//Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;0;64;<none>;cp311-win_amd64;;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages;C:\Users\marco\AppData\Local\Programs\Python\Python311\Lib\site-packages
-_Python3_INTERPRETER_SIGNATURE:INTERNAL=9758ff5970dfd6e84ce222893d83f5c0
+_Python3_INCLUDE_DIR:INTERNAL=_Python3_INCLUDE_DIR-NOTFOUND
 //Interpreter reason failure
 _Python3_Interpreter_REASON_FAILURE:INTERNAL=
 //Path to a library.
-_Python3_LIBRARY_DEBUG:INTERNAL=_Python3_LIBRARY_DEBUG-NOTFOUND
-//Path to a library.
-_Python3_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/libs/python311.lib
+_Python3_LIBRARY_RELEASE:INTERNAL=_Python3_LIBRARY_RELEASE-NOTFOUND
 _Python3_NUMPY_SIGNATURE:INTERNAL=8fbaca2ecb438941af57ecbe6e57a50f
 //Path to a file.
 _Python3_NumPy_INCLUDE_DIR:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/Lib/site-packages/numpy/_core/include
+//NumPy reason failure
+_Python3_NumPy_REASON_FAILURE:INTERNAL=
 //Path to a library.
 _Python3_RUNTIME_LIBRARY_RELEASE:INTERNAL=C:/Users/marco/AppData/Local/Programs/Python/Python311/python311.dll
 //True if pybind11 and all required components found on the system

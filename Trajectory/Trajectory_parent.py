@@ -19,6 +19,7 @@ class Trajectory:
         # Basic trajectory properties.
         obj.addProperty("App::PropertyString", "Type", "Trajectory", "Type of the object").Type = "Trajectory"
         obj.addProperty("App::PropertyVectorList", "Points", "Trajectory", "List of points").Points = []
+        obj.addProperty("App::PropertyVectorList", "SplinePoints", "Trajectory", "List of spline points").SplinePoints = []
 
         # Arrays that store solutions/time-series data.
         obj.addProperty("App::PropertyPythonObject", "t", "Time", "Times at each point").t = []

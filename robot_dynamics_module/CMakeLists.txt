@@ -6,6 +6,16 @@ set(MY_WORKBENCH_VERSION "${MY_WORKBENCH_VERSION_MAJOR}.${MY_WORKBENCH_VERSION_M
 cmake_minimum_required(VERSION 3.15)
 project(freecad_robotics LANGUAGES CXX)
 
+
+execute_process(
+  COMMAND git submodule update --init --recursive
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  RESULT_VARIABLE _git_submod_status
+)
+if(NOT _git_submod_status EQUAL 0)
+  message(FATAL_ERROR "Failed to update Git submodules (exit code ${_git_submod_status})")
+endif()
+
 # Find Python and NumPy
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 

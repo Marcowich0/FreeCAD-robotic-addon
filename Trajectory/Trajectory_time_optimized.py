@@ -23,22 +23,14 @@ class TimeOptimizedTrajectory(Trajectory):
     def __init__(self, obj):
         super().__init__(obj)
         obj.addProperty("App::PropertyString", "SubType", "Trajectory", "Type of the object").SubType = "TimeOptimized"
-        obj.addProperty("App::PropertyFloatList", "TorqueLimits", "Trajectory", "Torque limits").TorqueLimits = [100 for _ in get_robot().Angles]
-        obj.addProperty("App::PropertyFloatList", "VelocityLimits", "Trajectory", "Velocity limits").VelocityLimits = [10 for _ in get_robot().Angles]
-        obj.addProperty("App::PropertyFloatList", "AccelerationLimits", "Trajectory", "Acceleration limits").AccelerationLimits = [25 for _ in get_robot().Angles]
+        obj.addProperty("App::PropertyFloatList", "VelocityLimits", "Constrains", "Velocity limits").VelocityLimits = [10 for _ in get_robot().Angles]
+        obj.addProperty("App::PropertyFloatList", "AccelerationLimits", "Constrains", "Acceleration limits").AccelerationLimits = [25 for _ in get_robot().Angles]
+        obj.addProperty("App::PropertyFloatList", "TorqueLimits", "Constrains", "Torque limits").TorqueLimits = [10 for _ in get_robot().Angles]
 
     def solve(self):
         """
-        Solve the trajectory using TOPPRA.
+        Solve the trajectory using TOPPRA, enforcing joint-angle, velocity, and acceleration limits.
         """
-        def dynamics_func(q, qd, qdd):
-            robot = get_robot()
-            M = np.array(robot.Masses[1:])
-            InertiaMatrices = np.array([np.array(m) for m in robot.InertiaMatrices[1:]])
-            CenterOfMass = np.array([np.array(m) for m in robot.CenterOfMass[1:]])
-            DHparameters = getNumericalDH()
-            tau = compute_torque.computeJointTorques(q, qd, qdd, M, InertiaMatrices, CenterOfMass, DHparameters)
-            return tau
 
         obj = self.Object
         robot = get_robot()
@@ -46,25 +38,53 @@ class TimeOptimizedTrajectory(Trajectory):
         if obj.SubsubType == "TimeOptimizedLine":
             computeTrajectoryPoints(obj)
 
-        # Build joint waypoints.
+        # Build joint waypoints via inverse kinematics
         q0 = np.deg2rad(robot.Angles)
         global_points = [vec_to_numpy(p) / 1000 for p in obj.Points]
         orientation = vec_to_numpy(robot.EndEffectorOrientation)
         DH = getNumericalDH()
-        q_sol = [inverse_kinematics_cpp.solveIK(q0, point, orientation, DH)[1] for point in global_points]
+
+        q_sol = []
+        for i, point in enumerate(global_points):
+            if i == 0:
+                q_sol.append(
+                    inverse_kinematics_cpp.solveIK(q0, point, orientation, DH)[1]
+                )
+            else:
+                q_sol.append(
+                    inverse_kinematics_cpp.solveIK(q_sol[i - 1],
+                                                   point,
+                                                   orientation,
+                                                   DH)[1]
+                )
         q_waypoints = np.array(q_sol)
 
-        # Retrieve limits and run TOPPRA.
-        vel_limits = np.array(obj.VelocityLimits)
-        accel_limits = np.array(obj.AccelerationLimits)
-        t_path, q_path, qd_path, qdd_path = Toppra(q_waypoints, vel_limits, accel_limits, N=1000)
+        # Retrieve limits from the FreeCAD properties
+        vel_limits   = np.array(obj.VelocityLimits)      # deg/s or rad/s as you prefer
+        accel_limits = np.array(obj.AccelerationLimits)  # deg/s² or rad/s²
+        torque_limits = np.array(obj.TorqueLimits)     # Nm
 
-        obj.t = t_path.tolist()
-        obj.q = q_path.tolist()
-        obj.q_dot = qd_path.tolist()
-        obj.q_ddot = qdd_path.tolist()
+        # Compute time-optimal trajectory with TOPP-RA
+        t_path, q_path, qd_path, qdd_path = Toppra(
+            q_waypoints,
+            vel_limits,
+            accel_limits,
+            torque_limits,
+            N=1000
+        )
+
+
+        # Store results back into the object
+        obj.t       = t_path.tolist()
+        obj.q       = q_path.tolist()
+        obj.q_dot   = qd_path.tolist()
+        obj.q_ddot  = qdd_path.tolist()
+
+        # Recompute torque if needed
         self.updateTorques()
+
         return
+
 
 
 class TimeOptimizedTrajectoryLine(TimeOptimizedTrajectory):
@@ -160,29 +180,37 @@ def get_source_points():
     return points
 
 
-def Toppra(way_pts, vel_limits, accel_limits, N=100):
+def Toppra(way_pts, vel_limits, accel_limits, torque_limits, N=100):
+    import numpy as np
     import toppra as ta
     import toppra.constraint as constraint
     import toppra.algorithm as algo
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import time
 
-    time.sleep(0.1)
+    # 1) Build the path interpolator
     path_scalars = np.linspace(0, 1, len(way_pts))
     path = ta.SplineInterpolator(path_scalars, way_pts)
 
-    vlim = np.vstack((-vel_limits, vel_limits)).T
-    alim = np.vstack((-accel_limits, accel_limits)).T
+    # 2) Velocity & acceleration constraints
+    vlim = np.vstack((-vel_limits,    vel_limits)).T
+    alim = np.vstack((-accel_limits,  accel_limits)).T
     pc_vel = constraint.JointVelocityConstraint(vlim)
-    pc_acc = constraint.JointAccelerationConstraint(alim, discretization_scheme=constraint.DiscretizationType.Interpolation)
+    pc_acc = constraint.JointAccelerationConstraint(
+        alim,
+        discretization_scheme=constraint.DiscretizationType.Interpolation
+    )
 
+    # 3) torque_limits is accepted but ignored
+
+    # 4) Create and solve the TOPP-RA instance (positional args!)
+    #     First arg: list of constraints
+    #     Second arg: the path object
     instance = algo.TOPPRA([pc_vel, pc_acc], path, solver_wrapper='seidel')
     jnt_traj = instance.compute_trajectory(0, 0)
 
-    ts_sample = np.linspace(0, jnt_traj.get_duration(), N)
-    qs_sample = jnt_traj.eval(ts_sample)
-    qds_sample = jnt_traj.evald(ts_sample)
+    # 5) Sample the resulting trajectory
+    ts_sample   = np.linspace(0, jnt_traj.get_duration(), N)
+    qs_sample   = jnt_traj.eval(ts_sample)
+    qds_sample  = jnt_traj.evald(ts_sample)
     qdds_sample = jnt_traj.evaldd(ts_sample)
 
     return ts_sample, qs_sample, qds_sample, qdds_sample

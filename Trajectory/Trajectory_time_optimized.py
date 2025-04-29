@@ -25,7 +25,7 @@ class TimeOptimizedTrajectory(Trajectory):
         obj.addProperty("App::PropertyString", "SubType", "Trajectory", "Type of the object").SubType = "TimeOptimized"
         obj.addProperty("App::PropertyFloatList", "VelocityLimits", "Constrains", "Velocity limits").VelocityLimits = [10 for _ in get_robot().Angles]
         obj.addProperty("App::PropertyFloatList", "AccelerationLimits", "Constrains", "Acceleration limits").AccelerationLimits = [25 for _ in get_robot().Angles]
-        obj.addProperty("App::PropertyFloatList", "TorqueLimits", "Constrains", "Torque limits").TorqueLimits = [10 for _ in get_robot().Angles]
+        obj.addProperty("App::PropertyFloatList", "TorqueLimits", "Constrains", "Torque limits").TorqueLimits = [0 for _ in get_robot().Angles]
 
     def solve(self):
         """
@@ -186,31 +186,74 @@ def Toppra(way_pts, vel_limits, accel_limits, torque_limits, N=100):
     import toppra.constraint as constraint
     import toppra.algorithm as algo
 
-    # 1) Build the path interpolator
-    path_scalars = np.linspace(0, 1, len(way_pts))
-    path = ta.SplineInterpolator(path_scalars, way_pts)
+    # Inverse dynamics callback
+    def inv_dyn(q, qd, qdd):
+        robot = get_robot()
+        M    = np.array(robot.Masses[1:])
+        I_m  = np.array([np.array(m) for m in robot.InertiaMatrices[1:]])
+        Coms = np.array([np.array(c) for c in robot.CenterOfMass[1:]])
+        DH   = getNumericalDH()
+        return compute_torque.computeJointTorques(
+            q, qd, qdd,
+            M, I_m, Coms, DH
+        )
 
-    # 2) Velocity & acceleration constraints
-    vlim = np.vstack((-vel_limits,    vel_limits)).T
-    alim = np.vstack((-accel_limits,  accel_limits)).T
-    pc_vel = constraint.JointVelocityConstraint(vlim)
-    pc_acc = constraint.JointAccelerationConstraint(
-        alim,
-        discretization_scheme=constraint.DiscretizationType.Interpolation
-    )
+    # 1) Path
+    s    = np.linspace(0, 1, len(way_pts))
+    path = ta.SplineInterpolator(s, way_pts)
 
-    # 3) torque_limits is accepted but ignored
+    constraints = []
 
-    # 4) Create and solve the TOPP-RA instance (positional args!)
-    #     First arg: list of constraints
-    #     Second arg: the path object
-    instance = algo.TOPPRA([pc_vel, pc_acc], path, solver_wrapper='seidel')
-    jnt_traj = instance.compute_trajectory(0, 0)
+    # 2) Velocity constraint (if any nonzero)
+    if np.any(vel_limits != 0):
+        # joints with zero limit → no limit (±∞)
+        vmin = np.where(vel_limits != 0, -vel_limits, -np.inf)
+        vmax = np.where(vel_limits != 0,  vel_limits,  np.inf)
+        vlim = np.vstack((vmin, vmax)).T
+        pc_vel = constraint.JointVelocityConstraint(vlim)
+        constraints.append(pc_vel)
 
-    # 5) Sample the resulting trajectory
-    ts_sample   = np.linspace(0, jnt_traj.get_duration(), N)
-    qs_sample   = jnt_traj.eval(ts_sample)
-    qds_sample  = jnt_traj.evald(ts_sample)
-    qdds_sample = jnt_traj.evaldd(ts_sample)
+    # 3) Acceleration constraint (if any nonzero)
+    if np.any(accel_limits != 0):
+        amin = np.where(accel_limits != 0, -accel_limits, -np.inf)
+        amax = np.where(accel_limits != 0,  accel_limits,  np.inf)
+        alim = np.vstack((amin, amax)).T
+        pc_acc = constraint.JointAccelerationConstraint(
+            alim,
+            discretization_scheme=constraint.DiscretizationType.Interpolation
+        )
+        constraints.append(pc_acc)
 
-    return ts_sample, qs_sample, qds_sample, qdds_sample
+    # 4) Torque constraint (if any nonzero)
+    if np.any(torque_limits != 0):
+        tmin = np.where(torque_limits != 0, -torque_limits, -np.inf)
+        tmax = np.where(torque_limits != 0,  torque_limits,  np.inf)
+        tau_lim = np.vstack((tmin, tmax)).T
+        fs_coef = np.zeros_like(torque_limits)
+        pc_tau  = constraint.JointTorqueConstraint(
+            inv_dyn,
+            tau_lim,
+            fs_coef,
+            discretization_scheme=constraint.DiscretizationType.Interpolation
+        )
+        constraints.append(pc_tau)
+
+    # 5) Build and solve TOPP-RA
+    if not constraints:
+        raise RuntimeError("No nonzero limits provided: nothing to constrain!")
+
+    instance = algo.TOPPRA(constraints, path, solver_wrapper='seidel')
+    traj = instance.compute_trajectory(0, 0)
+    if traj is None:
+        raise RuntimeError(
+            "TOPP-RA failed: no feasible trajectory under given limits."
+        )
+
+    # 6) Sample
+    ts   = np.linspace(0, traj.get_duration(), N)
+    qs   = traj.eval(ts)
+    qds  = traj.evald(ts)
+    qdds = traj.evaldd(ts)
+
+    return ts, qs, qds, qdds
+

@@ -96,7 +96,6 @@ class TimeOptimizedTrajectoryLine(TimeOptimizedTrajectory):
         obj.addProperty("App::PropertyString", "SubsubType", "Trajectory", "Type of the object").SubsubType = "TimeOptimizedLine"
         obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body").Body = None
         obj.addProperty("App::PropertyLinkSubList", "Edges", "Trajectory", "Link to Edges").Edges = []
-        obj.addProperty("App::PropertyFloat", "DistanceBetweenPoints", "Trajectory", "Distance between points").DistanceBetweenPoints = 5e-3
         obj.addProperty("App::PropertyBool", "externalModel", "Trajectory", "External Model").externalModel = False
 
 
@@ -110,7 +109,7 @@ class TimeOptimizedTrajectoryPoints(TimeOptimizedTrajectory):
         obj.addProperty("App::PropertyLink", "Body", "Trajectory", "Link to a Body")
         obj.addProperty("App::PropertyLinkSubList", "ScourcePoints", "Trajectory", "Link to Edges").ScourcePoints = []
 
-
+from scipy.interpolate import splprep, splev
 #
 # --------------------- COMMANDS ---------------------
 #
@@ -133,12 +132,30 @@ class AddTimeOptimizedTrajectoryCommand:
             TimeOptimizedTrajectoryLine(trajectory_obj)
             trajectory_obj.ViewObject.Proxy = ViewProviderTrajectory(trajectory_obj.ViewObject)
             selectEdgesForTrajectory(trajectory_obj)
+
         elif sel_type == 'Vertex':
             TimeOptimizedTrajectoryPoints(trajectory_obj)
             trajectory_obj.ViewObject.Proxy = ViewProviderTrajectory(trajectory_obj.ViewObject)
-            source_points = get_source_points()
-            trajectory_obj.ScourcePoints = source_points
-            trajectory_obj.Points = get_global_points()
+
+            # 1) Get global points in meters
+            raw_pts = np.array([vec_to_numpy(p) / 1000 for p in get_global_points()]).T  # shape (3, M)
+
+            # 2) Fit interpolating B-spline
+            tck, u = splprep(raw_pts, s=0.0, k=3)
+
+            # 3) Determine sampling resolution
+            L = trajectory_obj.DistanceBetweenPoints or 5e-3
+            uc = np.linspace(0, 1, 200)
+            pts_coarse = np.array(splev(uc, tck)).T
+            total_length = np.linalg.norm(np.diff(pts_coarse, axis=0), axis=1).sum()
+            num_samples  = max(int(total_length / L), 2)
+
+            # 4) Resample
+            us       = np.linspace(0, 1, num_samples)
+            sampled  = np.array(splev(us, tck)).T  # shape (num_samples,3)
+
+            # 6) Store
+            trajectory_obj.Points           = [numpy_to_vec(p * 1000) for p in sampled]
         else:
             FreeCAD.Console.PrintError("Selected object is not a valid trajectory type.\n")
             return
